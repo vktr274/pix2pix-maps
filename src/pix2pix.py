@@ -77,36 +77,32 @@ def upsampling_block(
 
 def Generator(
     input_shape: Tuple[int, int, int],
-    kernel_size: Tuple[int, int],
-    strides: Tuple[int, int],
 ) -> Model:
     inputs = Input(shape=input_shape)
 
     contracting_path = [
-        downsampling_block(
-            64, kernel_size=kernel_size, strides=strides, use_batchnorm=False
-        ),
-        downsampling_block(128, kernel_size=kernel_size, strides=strides),
-        downsampling_block(256, kernel_size=kernel_size, strides=strides),
-        downsampling_block(512, kernel_size=kernel_size, strides=strides),
-        downsampling_block(512, kernel_size=kernel_size, strides=strides),
-        downsampling_block(512, kernel_size=kernel_size, strides=strides),
-        downsampling_block(512, kernel_size=kernel_size, strides=strides),
-        downsampling_block(512, kernel_size=kernel_size, strides=strides),
+        downsampling_block(64, use_batchnorm=False),
+        downsampling_block(128),
+        downsampling_block(256),
+        downsampling_block(512),
+        downsampling_block(512),
+        downsampling_block(512),
+        downsampling_block(512),
+        downsampling_block(512),
     ]
 
     expansive_path = [
-        upsampling_block(512, kernel_size=kernel_size, strides=strides, dropout=0.5),
-        upsampling_block(512, kernel_size=kernel_size, strides=strides, dropout=0.5),
-        upsampling_block(512, kernel_size=kernel_size, strides=strides, dropout=0.5),
-        upsampling_block(512, kernel_size=kernel_size, strides=strides),
-        upsampling_block(256, kernel_size=kernel_size, strides=strides),
-        upsampling_block(128, kernel_size=kernel_size, strides=strides),
-        upsampling_block(64, kernel_size=kernel_size, strides=strides),
+        upsampling_block(512, dropout=0.5),
+        upsampling_block(512, dropout=0.5),
+        upsampling_block(512, dropout=0.5),
+        upsampling_block(512),
+        upsampling_block(256),
+        upsampling_block(128),
+        upsampling_block(64),
     ]
 
     last = Conv2DTranspose(
-        3, kernel_size=kernel_size, strides=(2, 2), activation="tanh", padding="same"
+        3, kernel_size=(4, 4), strides=(2, 2), activation="tanh", padding="same"
     )
 
     out = inputs
@@ -126,6 +122,6 @@ def Generator(
 
 
 if __name__ == "__main__":
-    gen = Generator((256, 256, 3), kernel_size=(4, 4), strides=(2, 2))
+    gen = Generator((256, 256, 3))
     gen.summary()
     plot_model(gen, to_file="generator.png", show_shapes=True)
