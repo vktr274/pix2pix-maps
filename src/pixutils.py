@@ -32,6 +32,32 @@ def rescale_images(input_image, real_image):
     return input_image, real_image
 
 
+def random_jitter(input_image_patches, real_image_patches, resize_to: int):
+    original_size = tf.shape(input_image_patches)[1]
+
+    input_image_patches, real_image_patches = resize_images(
+        input_image=input_image_patches,
+        real_image=real_image_patches,
+        resize_to=resize_to,
+    )
+
+    number_of_patches = tf.shape(input_image_patches)[0]
+    input_image_patches = tf.image.random_crop(
+        input_image_patches,
+        size=(number_of_patches, original_size, original_size, 3),
+    )
+    real_image_patches = tf.image.random_crop(
+        real_image_patches,
+        size=(number_of_patches, original_size, original_size, 3),
+    )
+
+    if tf.random.uniform(()) > 0.5:
+        input_image_patches = tf.image.flip_left_right(input_image_patches)
+        real_image_patches = tf.image.flip_left_right(real_image_patches)
+
+    return input_image_patches, real_image_patches
+
+
 def extract_patches(input_image, real_image, patch_size: int, num_of_patches: int):
     input_image_patches = tf.image.extract_patches(
         images=tf.expand_dims(input_image, axis=0),
@@ -57,6 +83,9 @@ def extract_patches(input_image, real_image, patch_size: int, num_of_patches: in
 
 
 def show(input_image, real_image, number: int, subset: str) -> None:
+    input_image = ((input_image + 1) * 127.5) / 255.0
+    real_image = ((real_image + 1) * 127.5) / 255.0
+
     _, axs = plt.subplots(1, 2)
     axs[0].axis("off")
     axs[1].axis("off")

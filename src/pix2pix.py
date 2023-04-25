@@ -1,9 +1,9 @@
 from typing import Tuple, Union
 import tensorflow as tf
-from keras.losses import BinaryCrossentropy, MeanAbsoluteError
-from keras import Model, Sequential, Input
-from keras.utils import plot_model
-from keras.layers import (
+from tensorflow.keras.losses import BinaryCrossentropy, MeanAbsoluteError
+from tensorflow.keras import Model, Sequential, Input
+from tensorflow.keras.utils import plot_model
+from tensorflow.keras.layers import (
     Conv2D,
     Conv2DTranspose,
     BatchNormalization,
@@ -75,7 +75,7 @@ def upsampling_block(
     return up
 
 
-def Generator(
+def UNet(
     input_shape: Tuple[int, int, int],
 ) -> Model:
     inputs = Input(shape=input_shape)
@@ -121,7 +121,40 @@ def Generator(
     return Model(inputs=inputs, outputs=out)
 
 
+def PatchGAN(
+    input_shape: Tuple[int, int, int],
+    patch_size: int = 70,
+) -> Model:
+    inputs = Input(shape=input_shape, name="input_image")
+    targets = Input(shape=input_shape, name="target_image")
+
+    out = Concatenate()([inputs, targets])
+
+    kernel_size = (4, 4)
+    if patch_size == 1:
+        kernel_size = (1, 1)
+
+    out = downsampling_block(64, kernel_size=kernel_size, use_batchnorm=False)(out)
+    out = downsampling_block(128, kernel_size=kernel_size)(out)
+
+    if patch_size not in (1, 16):
+        out = downsampling_block(256, kernel_size=kernel_size)(out)
+        out = downsampling_block(512, kernel_size=kernel_size)(out)
+
+    if patch_size == 286:
+        out = downsampling_block(512, kernel_size=kernel_size)(out)
+        out = downsampling_block(512, kernel_size=kernel_size)(out)
+
+    out = Conv2D(1, kernel_size=kernel_size, padding="same", activation="sigmoid")(out)
+
+    return Model(inputs=[inputs, targets], outputs=out)
+
+
 if __name__ == "__main__":
-    gen = Generator((256, 256, 3))
+    gen = UNet((256, 256, 3))
     gen.summary()
     plot_model(gen, to_file="generator.png", show_shapes=True)
+
+    disc = PatchGAN((256, 256, 3))
+    disc.summary()
+    plot_model(disc, to_file="discriminator.png", show_shapes=True)
