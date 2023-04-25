@@ -26,8 +26,8 @@ def resize_images(input_image, real_image, resize_to: int):
 
 
 def rescale_images(input_image, real_image):
-    input_image /= 255.0
-    real_image /= 255.0
+    input_image = (input_image / 127.5) - 1.0
+    real_image = (real_image / 127.5) - 1.0
 
     return input_image, real_image
 
@@ -62,5 +62,5 @@ def show(input_image, real_image, number: int, subset: str) -> None:
     axs[1].axis("off")
     axs[0].set_title(f"Input Image {number} ({subset})")
     axs[1].set_title(f"Real Image {number} ({subset})")
-    axs[0].imshow(input_image)
-    axs[1].imshow(real_image)
+    axs[0].imshow(input_image, vmin=-1, vmax=1)
+    axs[1].imshow(real_image, vmin=-1, vmax=1)
