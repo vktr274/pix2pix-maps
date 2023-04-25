@@ -250,8 +250,7 @@ def fit(
 
             if step % 100 == 0:
                 print(
-                    f"Epoch: {epoch + 1}, Step: {step}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}",
-                    flush=True,
+                    f"Epoch: {epoch + 1}, Step: {step}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}"
                 )
         generate_image(generator, example_input, example_target)
 
