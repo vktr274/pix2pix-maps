@@ -248,7 +248,7 @@ def fit(
                 target,
             )
 
-            if step % 100 == 0:
+            if step % 1000 == 0:
                 print(
                     f"Epoch: {epoch + 1}, Step: {step}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}"
                 )
