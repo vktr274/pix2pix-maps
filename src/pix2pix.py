@@ -237,15 +237,15 @@ def fit(
 ) -> None:
     for epoch in range(epochs):
         example_input, example_target = next(iter(val_data.take(1)))
-        for step, (input_patches, target_patches) in enumerate(train_data):
+        for step, (input_image, target) in enumerate(train_data):
             gen_loss, disc_loss = train_step(
                 generator,
                 discriminator,
                 generator_optimizer,
                 discriminator_optimizer,
                 l1_lambda,
-                input_patches,
-                target_patches,
+                input_image,
+                target,
             )
 
             if step % 100 == 0:
