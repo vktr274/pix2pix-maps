@@ -212,7 +212,7 @@ def train_step(
 
 def generate_image(generator: Model, example_input, example_target):
     prediction = generator(example_input, training=True)
-    plt.figure(figsize=(15, 15))
+    plt.figure(figsize=(10, 10))
 
     display_list = [example_input[0], example_target[0], prediction[0]]
     title = ["Input Image", "Ground Truth", "Predicted Image"]
@@ -247,11 +247,12 @@ def fit(
                 input_image,
                 target,
             )
-
-            if step % 1000 == 0:
-                print(
-                    f"Epoch: {epoch + 1}, Step: {step}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}"
-                )
+            print(
+                f"Epoch: {epoch + 1}, Step: {step}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}",
+                end="\r",
+                flush=True,
+            )
+        print("\n")
         generate_image(generator, example_input, example_target)
 
 

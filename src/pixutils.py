@@ -84,7 +84,7 @@ def extract_patches(input_image, real_image, patch_size: int, num_of_patches: in
 
 def show(input_image, real_image, number: int, subset: str) -> None:
     input_image = input_image * 0.5 + 0.5
-    real_image = real_image * 0.5 + 0.5
+    real_image = input_image * 0.5 + 0.5
 
     _, axs = plt.subplots(1, 2)
     axs[0].axis("off")
