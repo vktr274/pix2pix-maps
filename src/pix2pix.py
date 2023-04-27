@@ -266,7 +266,7 @@ def generate_image(
     prediction = generator(example_input, training=True)
     fig = plt.figure(figsize=(10, 10))
 
-    display_list = [example_input, example_target, prediction]
+    display_list = [example_input[0], example_target, prediction[0]]
     title = ["Input Image", "Ground Truth", "Predicted Image"]
 
     for i in range(3):
@@ -399,8 +399,8 @@ def fit(
         example_input_batch, example_target_batch = next(iter(val_data))
         figure = generate_image(
             generator,
-            tf.expand_dims(next(iter(example_input_batch)), axis=0),
-            tf.expand_dims(next(iter(example_target_batch)), axis=0),
+            tf.expand_dims(example_input_batch[0], axis=0),
+            example_target_batch[0],
             show=epoch % 10 == 0,
         )
 
