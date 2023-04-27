@@ -32,6 +32,7 @@ def rescale_images(input_image, real_image):
     return input_image, real_image
 
 
+@tf.function
 def random_jitter(input_image_patches, real_image_patches, resize_to: int):
     original_size = tf.shape(input_image_patches)[1]
 
@@ -58,6 +59,7 @@ def random_jitter(input_image_patches, real_image_patches, resize_to: int):
     return input_image_patches, real_image_patches
 
 
+@tf.function
 def extract_patches(input_image, real_image, patch_size: int, num_of_patches: int):
     input_image_patches = tf.image.extract_patches(
         images=tf.expand_dims(input_image, axis=0),
