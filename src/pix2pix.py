@@ -1,5 +1,6 @@
 from typing import Dict, Tuple, Union, cast
 from matplotlib.figure import Figure
+import numpy as np
 import wandb
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -264,14 +265,18 @@ def generate_image(
     :return: Figure of example input, target and prediction
     """
     prediction = generator(example_input, training=True)
+    l1_loss = l1(example_target, prediction)
     fig = plt.figure(figsize=(10, 10))
 
     display_list = [example_input[0], example_target, prediction[0]]
-    title = ["Input Image", "Ground Truth", "Predicted Image"]
+    titles = ["Input Image", "Ground Truth", "Predicted Image"]
 
     for i in range(3):
         plt.subplot(1, 3, i + 1)
-        plt.title(title[i])
+        title = titles[i]
+        if i == 2:
+            title += f"\nL1 Loss: {l1_loss:.4f}"
+        plt.title(title)
         plt.imshow(display_list[i] * 0.5 + 0.5)
         plt.axis("off")
     if show:
@@ -349,7 +354,6 @@ def fit(
     generator_optimizer: Optimizer,
     discriminator_optimizer: Optimizer,
     l1_lambda: float = 100,
-    patience: Union[int, None] = None,
 ) -> None:
     """
     Trains the pix2pix model.
@@ -362,22 +366,20 @@ def fit(
     :param generator_optimizer: Generator optimizer.
     :param discriminator_optimizer: Discriminator optimizer.
     :param l1_lambda: Lambda for L1 loss.
-    :param patience: Patience for early stopping. If None, early stopping is not used.
 
     :return: None.
     """
-    accumulated_l1_loss = []
     for epoch in range(epochs):
         losses_epoch = {}
-        for step, (input_image, target) in enumerate(train_data):
+        for step, (input_batch, target_batch) in enumerate(train_data):
             losses = train_step(
                 generator,
                 discriminator,
                 generator_optimizer,
                 discriminator_optimizer,
                 l1_lambda,
-                input_image,
-                target,
+                input_batch,
+                target_batch,
             )
 
             losses = cast(Dict[str, tf.Tensor], losses)
@@ -391,45 +393,20 @@ def fit(
                 end="\r",
                 flush=True,
             )
-        print("")
 
         for k, v in losses_epoch.items():
             losses_epoch[k] = tf.reduce_mean(v)
 
-        example_input_batch, example_target_batch = next(iter(val_data))
+        example_input_batch, example_target_batch = val_data[
+            np.random.randint(0, int(val_data.cardinality()))
+        ]
         figure = generate_image(
             generator,
             tf.expand_dims(example_input_batch[0], axis=0),
             example_target_batch[0],
             show=epoch % 10 == 0,
         )
-
-        generated_batch = generator(example_input_batch, training=True)
-        l1_val_loss = l1(generated_batch, example_target_batch)
-
-        accumulated_l1_loss.append(l1_val_loss)
-        print(f"Epoch: {epoch + 1}, L1 Val Loss: {l1_val_loss}")
-
-        wandb.log(
-            {
-                **losses_epoch,
-                "epoch": epoch + 1,
-                "l1_val_loss": l1_val_loss,
-                "image": figure,
-            }
-        )
-
-        if patience is not None and len(accumulated_l1_loss) == patience:
-            # Stop if every (patience - 1) epochs the L1 loss wasn't decreasing
-            if all(
-                [
-                    accumulated_l1_loss[i] < accumulated_l1_loss[i + 1]
-                    for i in range(len(accumulated_l1_loss) - 1)
-                ]
-            ):
-                print("Early stopping")
-                break
-            accumulated_l1_loss = []
+        wandb.log({**losses_epoch, "epoch": epoch + 1, "image": figure})
 
 
 if __name__ == "__main__":
