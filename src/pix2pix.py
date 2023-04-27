@@ -241,9 +241,9 @@ def train_step(
     return losses
 
 
-def generate_image(generator: Model, example_input, example_target):
+def generate_image(generator: Model, example_input, example_target, show=False):
     prediction = generator(example_input, training=True)
-    plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(10, 10))
 
     display_list = [example_input[0], example_target[0], prediction[0]]
     title = ["Input Image", "Ground Truth", "Predicted Image"]
@@ -253,7 +253,9 @@ def generate_image(generator: Model, example_input, example_target):
         plt.title(title[i])
         plt.imshow(display_list[i] * 0.5 + 0.5)
         plt.axis("off")
-    plt.show()
+    if show:
+        plt.show()
+    wandb.log({"images": fig}, commit=False)
 
 
 def fit(
@@ -296,9 +298,8 @@ def fit(
         for k, v in losses_epoch.items():
             losses_epoch[k] = tf.reduce_mean(v)
 
+        generate_image(generator, example_input, example_target, show=epoch % 10 == 0)
         wandb.log({**losses_epoch, "epoch": epoch + 1})
-
-        generate_image(generator, example_input, example_target)
 
 
 if __name__ == "__main__":
