@@ -77,6 +77,17 @@ def downsampling_block(
     use_batchnorm: bool = True,
     dropout: Union[float, None] = None,
 ) -> Sequential:
+    """
+    Creates a downsampling block.
+
+    :param filters: The number of filters.
+    :param kernel_size: The kernel size.
+    :param strides: The strides.
+    :param use_batchnorm: Whether to use batch normalization.
+    :param dropout: The dropout rate. If None, no dropout is used.
+
+    :return: The downsampling block.
+    """
     down = Sequential()
 
     down.add(
@@ -104,6 +115,17 @@ def upsampling_block(
     use_batchnorm: bool = True,
     dropout: Union[float, None] = None,
 ) -> Sequential:
+    """
+    Creates an upsampling block.
+
+    :param filters: The number of filters.
+    :param kernel_size: The kernel size.
+    :param strides: The strides.
+    :param use_batchnorm: Whether to use batch normalization.
+    :param dropout: The dropout rate. If None, no dropout is used.
+
+    :return: The upsampling block.
+    """
     up = Sequential()
 
     up.add(
@@ -127,6 +149,13 @@ def upsampling_block(
 def UNet(
     input_shape: Tuple[int, int, int],
 ) -> Model:
+    """
+    Creates a UNet generator model.
+
+    :param input_shape: The input shape of the model.
+
+    :return: The UNet generator model.
+    """
     inputs = Input(shape=input_shape)
 
     contracting_path = [
@@ -179,6 +208,14 @@ def PatchGAN(
     input_shape: Tuple[int, int, int],
     patch_size: int = 70,
 ) -> Model:
+    """
+    Creates a PatchGAN discriminator model.
+
+    :param input_shape: The input shape of the model.
+    :param patch_size: The size of the patches.
+
+    :return: The PatchGAN discriminator model.
+    """
     inputs = Input(shape=input_shape, name="input_image")
     targets = Input(shape=input_shape, name="target_image")
 
@@ -210,7 +247,19 @@ def PatchGAN(
     return Model(inputs=[inputs, targets], outputs=out)
 
 
-def generate_image(generator: Model, example_input, example_target, show=False):
+def generate_image(generator: Model, example_input, example_target, show=False) -> None:
+    """
+    Generates and optionally displays a generated image
+    from the generator model along with the input and
+    ground truth images.
+
+    :param generator: The generator model
+    :param example_input: The input image to be translated
+    :param example_target: The ground truth image
+    :param show: Whether to display the generated image
+
+    :return: None
+    """
     prediction = generator(example_input, training=True)
     fig = plt.figure(figsize=(10, 10))
 
@@ -237,6 +286,19 @@ def train_step(
     input_image: tf.Tensor,
     target: tf.Tensor,
 ) -> Dict[str, tf.Tensor]:
+    """
+    Performs a single training step for the pix2pix model.
+
+    :param generator: The generator model.
+    :param discriminator: The discriminator model.
+    :param generator_optimizer: The optimizer for the generator.
+    :param discriminator_optimizer: The optimizer for the discriminator.
+    :param l1_lambda: The lambda value for the L1 loss.
+    :param input_image: The input image to be translated.
+    :param target: The target ground truth image.
+
+    :return: A dictionary containing the losses for the generator and discriminator.
+    """
     with tf.GradientTape() as g_tape, tf.GradientTape() as d_tape:
         fake_g_image = generator(input_image, training=True)
 
@@ -283,6 +345,21 @@ def fit(
     l1_lambda: float = 100,
     patience: Union[int, None] = None,
 ) -> None:
+    """
+    Trains the pix2pix model.
+
+    :param train_data: Training data.
+    :param val_data: Validation data.
+    :param epochs: Number of epochs to train for.
+    :param generator: Generator model.
+    :param discriminator: Discriminator model.
+    :param generator_optimizer: Generator optimizer.
+    :param discriminator_optimizer: Discriminator optimizer.
+    :param l1_lambda: Lambda for L1 loss.
+    :param patience: Patience for early stopping. If None, early stopping is not used.
+
+    :return: None.
+    """
     accumulated_l1_loss = []
     for epoch in range(epochs):
         losses_epoch = {}
