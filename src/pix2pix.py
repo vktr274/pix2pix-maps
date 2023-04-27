@@ -23,38 +23,50 @@ l1 = MeanAbsoluteError()
 
 def g_loss(
     l1_lambda: float,
-    fake_G: tf.Tensor,
-    fake_D: tf.Tensor,
+    fake_G_image: tf.Tensor,
+    fake_D_out: tf.Tensor,
     y: tf.Tensor,
 ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
     """
     Calculates the generator loss.
 
     :param l1_lambda: The lambda value for the L1 loss.
-    :param fake_G: The fake generated image.
-    :param fake_D: The fake discriminator output.
+    :param fake_G_image: The fake generated image.
+    :param fake_D_out: The fake discriminator output.
     :param y: The real image.
 
-    :return: The generator loss, the fake loss, and the L1 loss.
+    :return: The total generator loss, the loss between the fake
+    discriminator output and real class, and the L1 loss
+    between the fake generated image and the real image.
     """
-    fake_loss = bce(tf.ones_like(fake_D), fake_D)
-    l1_loss = l1(fake_G, y)
-    return fake_loss + l1_lambda * l1_loss, fake_loss, l1_loss
+    real_class = tf.ones_like(fake_D_out)
+
+    fake_D_loss = bce(real_class, fake_D_out)
+    l1_loss = l1(fake_G_image, y)
+
+    return fake_D_loss + l1_lambda * l1_loss, fake_D_loss, l1_loss
 
 
 def d_loss(
-    real_D: tf.Tensor, fake_D: tf.Tensor
+    real_D_out: tf.Tensor, fake_D_out: tf.Tensor
 ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
     """
     Calculates the discriminator loss.
 
-    :param real_D: The real discriminator output.
-    :param fake_D: The fake discriminator output.
+    :param real_D_out: The real discriminator output.
+    :param fake_D_out: The fake discriminator output.
 
-    :return: The discriminator loss, the real discriminator loss, and the fake discriminator loss.
+    :return: The total discriminator loss, the discriminator loss
+    between the real discriminator output and real class, and the
+    discriminator loss between the fake discriminator output and
+    fake class.
     """
-    real_loss = bce(tf.ones_like(real_D), real_D)
-    fake_loss = bce(tf.zeros_like(fake_D), fake_D)
+    real_class = tf.ones_like(real_D_out)
+    fake_class = tf.zeros_like(fake_D_out)
+
+    real_loss = bce(real_class, real_D_out)
+    fake_loss = bce(fake_class, fake_D_out)
+
     return real_loss + fake_loss, real_loss, fake_loss
 
 
@@ -198,49 +210,6 @@ def PatchGAN(
     return Model(inputs=[inputs, targets], outputs=out)
 
 
-@tf.function
-def train_step(
-    generator: Model,
-    discriminator: Model,
-    generator_optimizer: Optimizer,
-    discriminator_optimizer: Optimizer,
-    l1_lambda: float,
-    input_image: tf.Tensor,
-    target: tf.Tensor,
-) -> Dict[str, tf.Tensor]:
-    with tf.GradientTape() as g_tape, tf.GradientTape() as d_tape:
-        fake_G = generator(input_image, training=True)
-
-        real_D = discriminator([input_image, target], training=True)
-        fake_D = discriminator([input_image, fake_G], training=True)
-
-        gen_loss, fake_loss, l1_loss = g_loss(l1_lambda, fake_G, fake_D, target)
-        disc_loss, real_d_loss, fake_d_loss = d_loss(real_D, fake_D)
-
-    generator_gradients = g_tape.gradient(gen_loss, generator.trainable_variables)
-    discriminator_gradients = d_tape.gradient(
-        disc_loss, discriminator.trainable_variables
-    )
-
-    generator_optimizer.apply_gradients(
-        zip(generator_gradients, generator.trainable_variables)
-    )
-    discriminator_optimizer.apply_gradients(
-        zip(discriminator_gradients, discriminator.trainable_variables)
-    )
-
-    losses = {
-        "gen_loss": gen_loss,
-        "fake_loss": fake_loss,
-        "l1_loss": l1_loss,
-        "disc_loss": disc_loss,
-        "real_d_loss": real_d_loss,
-        "fake_d_loss": fake_d_loss,
-    }
-
-    return losses
-
-
 def generate_image(generator: Model, example_input, example_target, show=False):
     prediction = generator(example_input, training=True)
     fig = plt.figure(figsize=(10, 10))
@@ -256,6 +225,51 @@ def generate_image(generator: Model, example_input, example_target, show=False):
     if show:
         plt.show()
     wandb.log({"images": fig}, commit=False)
+
+
+@tf.function
+def train_step(
+    generator: Model,
+    discriminator: Model,
+    generator_optimizer: Optimizer,
+    discriminator_optimizer: Optimizer,
+    l1_lambda: float,
+    input_image: tf.Tensor,
+    target: tf.Tensor,
+) -> Dict[str, tf.Tensor]:
+    with tf.GradientTape() as g_tape, tf.GradientTape() as d_tape:
+        fake_g_image = generator(input_image, training=True)
+
+        real_d_out = discriminator([input_image, target], training=True)
+        fake_d_out = discriminator([input_image, fake_g_image], training=True)
+
+        total_gen_loss, fake_d_real_class_loss, l1_loss = g_loss(
+            l1_lambda, fake_g_image, fake_d_out, target
+        )
+        total_disc_loss, real_d_loss, fake_d_loss = d_loss(real_d_out, fake_d_out)
+
+    generator_gradients = g_tape.gradient(total_gen_loss, generator.trainable_variables)
+    discriminator_gradients = d_tape.gradient(
+        total_disc_loss, discriminator.trainable_variables
+    )
+
+    generator_optimizer.apply_gradients(
+        zip(generator_gradients, generator.trainable_variables)
+    )
+    discriminator_optimizer.apply_gradients(
+        zip(discriminator_gradients, discriminator.trainable_variables)
+    )
+
+    losses = {
+        "total_gen_loss": total_gen_loss,
+        "fake_d_real_class_loss": fake_d_real_class_loss,
+        "l1_loss": l1_loss,
+        "total_disc_loss": total_disc_loss,
+        "real_d_loss": real_d_loss,
+        "fake_d_loss": fake_d_loss,
+    }
+
+    return losses
 
 
 def fit(
@@ -283,17 +297,20 @@ def fit(
             )
 
             losses = cast(Dict[str, tf.Tensor], losses)
-            gen_loss = losses["gen_loss"]
-            disc_loss = losses["disc_loss"]
+            gen_loss = losses["total_gen_loss"]
+            disc_loss = losses["total_disc_loss"]
 
             losses_epoch = {k: losses_epoch.get(k, []) + [v] for k, v in losses.items()}
 
             print(
-                f"Epoch: {epoch + 1}, Step: {step}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}",
+                f"Epoch: {epoch + 1}, ",
+                f"Step: {step}, ",
+                f"Total Gen Loss: {gen_loss}, ",
+                f"Total Disc Loss: {disc_loss}",
                 end="\r",
                 flush=True,
             )
-        print("\n")
+        print("")
 
         for k, v in losses_epoch.items():
             losses_epoch[k] = tf.reduce_mean(v)
