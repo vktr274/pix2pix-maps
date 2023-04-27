@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Union, cast
+from typing import Dict, List, Tuple, Union, cast
 import wandb
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -267,7 +267,7 @@ def fit(
     l1_lambda: float,
 ) -> None:
     for epoch in range(epochs):
-        losses: Union[Dict[str, tf.Tensor], None] = {}
+        losses_epoch = {}
         example_input, example_target = next(iter(val_data.take(1)))
         for step, (input_image, target) in enumerate(train_data):
             losses = train_step(
@@ -284,6 +284,8 @@ def fit(
             gen_loss = losses["gen_loss"]
             disc_loss = losses["disc_loss"]
 
+            losses_epoch = {k: losses_epoch.get(k, []) + [v] for k, v in losses.items()}
+
             print(
                 f"Epoch: {epoch + 1}, Step: {step}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}",
                 end="\r",
@@ -291,7 +293,11 @@ def fit(
             )
         print("\n")
 
-        wandb.log({**losses, "epoch": epoch + 1})
+        for k, v in losses_epoch.items():
+            losses_epoch[k] = tf.reduce_mean(v)
+
+        wandb.log({**losses_epoch, "epoch": epoch + 1})
+
         generate_image(generator, example_input, example_target)
 
 
