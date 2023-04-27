@@ -280,8 +280,10 @@ def fit(
     discriminator: Model,
     generator_optimizer: Optimizer,
     discriminator_optimizer: Optimizer,
-    l1_lambda: float,
+    l1_lambda: float = 100,
+    patience: Union[int, None] = None,
 ) -> None:
+    accumulated_l1_loss = []
     for epoch in range(epochs):
         losses_epoch = {}
         example_input, example_target = next(iter(val_data.take(1)))
@@ -315,8 +317,22 @@ def fit(
         for k, v in losses_epoch.items():
             losses_epoch[k] = tf.reduce_mean(v)
 
+        accumulated_l1_loss.append(losses_epoch["l1_loss"])
+
         generate_image(generator, example_input, example_target, show=epoch % 10 == 0)
         wandb.log({**losses_epoch, "epoch": epoch + 1})
+
+        if patience is not None and len(accumulated_l1_loss) == patience:
+            # Stop if every (patience - 1) epochs the L1 loss wasn't decreasing
+            if all(
+                [
+                    accumulated_l1_loss[i] < accumulated_l1_loss[i + 1]
+                    for i in range(len(accumulated_l1_loss) - 1)
+                ]
+            ):
+                print("Early stopping")
+                break
+            accumulated_l1_loss = []
 
 
 if __name__ == "__main__":
