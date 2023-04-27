@@ -3,6 +3,13 @@ import matplotlib.pyplot as plt
 
 
 def load_image(image_file):
+    """
+    Loads an image from a file and splits it into two images.
+
+    :param image_file string tensor of the path
+
+    :return left and right half of the image
+    """
     image = tf.io.read_file(image_file)
     image = tf.io.decode_jpeg(image)
 
@@ -33,34 +40,53 @@ def rescale_images(input_image, real_image):
 
 
 @tf.function
-def random_jitter(input_image_patches, real_image_patches, resize_to: int):
-    original_size = tf.shape(input_image_patches)[1]
+def random_jitter(input_image, real_image, resize_to: int):
+    """
+    First resizes images to the given size, then randomly crops them to the original size.
+    After that, the images are randomly horizontally flipped.
 
-    input_image_patches, real_image_patches = resize_images(
-        input_image=input_image_patches,
-        real_image=real_image_patches,
+    :param input_image: input image
+    :param real_image: real image
+    :param resize_to: size to resize the images to
+
+    :return: randomly jittered images
+    """
+    original_size = tf.shape(input_image)[0]
+
+    input_image, real_image = resize_images(
+        input_image=input_image,
+        real_image=real_image,
         resize_to=resize_to,
     )
 
-    number_of_patches = tf.shape(input_image_patches)[0]
-    input_image_patches = tf.image.random_crop(
-        input_image_patches,
-        size=(number_of_patches, original_size, original_size, 3),
+    input_image = tf.image.random_crop(
+        input_image,
+        size=(original_size, original_size, 3),
     )
-    real_image_patches = tf.image.random_crop(
-        real_image_patches,
-        size=(number_of_patches, original_size, original_size, 3),
+    real_image = tf.image.random_crop(
+        real_image,
+        size=(original_size, original_size, 3),
     )
 
     if tf.random.uniform(()) > 0.5:
-        input_image_patches = tf.image.flip_left_right(input_image_patches)
-        real_image_patches = tf.image.flip_left_right(real_image_patches)
+        input_image = tf.image.flip_left_right(input_image)
+        real_image = tf.image.flip_left_right(real_image)
 
-    return input_image_patches, real_image_patches
+    return input_image, real_image
 
 
 @tf.function
 def extract_patches(input_image, real_image, patch_size: int, num_of_patches: int):
+    """
+    Extracts patches from the given images.
+
+    :param input_image: input image
+    :param real_image: real image
+    :param patch_size: size of the patches
+    :param num_of_patches: number of patches that are going to be extracted
+
+    :return: input and real image patches
+    """
     input_image_patches = tf.image.extract_patches(
         images=tf.expand_dims(input_image, axis=0),
         sizes=[1, patch_size, patch_size, 1],
