@@ -404,7 +404,7 @@ def fit(
             show=epoch % 10 == 0,
         )
 
-        generated_batch = generator(example_input_batch, training=False)
+        generated_batch = generator(example_input_batch, training=True)
         l1_val_loss = l1(generated_batch, example_target_batch)
 
         accumulated_l1_loss.append(l1_val_loss)
