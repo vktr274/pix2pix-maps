@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Union, cast
+from typing import Dict, Tuple, Union, cast
 import wandb
 import matplotlib.pyplot as plt
 import tensorflow as tf
