@@ -250,23 +250,23 @@ def PatchGAN(
 
 def generate_image(
     generator: Model, example_input, example_target, show=False
-) -> Tuple[tf.Tensor, Figure]:
+) -> Figure:
     """
     Generates and optionally displays a generated image
     from the generator model along with the input and
-    ground truth images. Also calculates the L1 validation loss.
+    ground truth images.
 
     :param generator: The generator model
     :param example_input: The input image to be translated
     :param example_target: The ground truth image
     :param show: Whether to display the generated image
 
-    :return: L1 validation loss and figure of example input, target and prediction
+    :return: Figure of example input, target and prediction
     """
     prediction = generator(example_input, training=True)
     fig = plt.figure(figsize=(10, 10))
 
-    display_list = [example_input[0], example_target[0], prediction[0]]
+    display_list = [example_input, example_target, prediction]
     title = ["Input Image", "Ground Truth", "Predicted Image"]
 
     for i in range(3):
@@ -276,10 +276,10 @@ def generate_image(
         plt.axis("off")
     if show:
         plt.show()
+    else:
+        plt.close()
 
-    l1_val_loss = l1(generator(example_input, training=False), example_target)
-
-    return l1_val_loss, fig
+    return fig
 
 
 @tf.function
@@ -369,7 +369,6 @@ def fit(
     accumulated_l1_loss = []
     for epoch in range(epochs):
         losses_epoch = {}
-        example_input, example_target = next(iter(val_data.take(1)))
         for step, (input_image, target) in enumerate(train_data):
             losses = train_step(
                 generator,
@@ -397,10 +396,19 @@ def fit(
         for k, v in losses_epoch.items():
             losses_epoch[k] = tf.reduce_mean(v)
 
-        l1_val_loss, figure = generate_image(
-            generator, example_input, example_target, show=epoch % 10 == 0
+        example_input_batch, example_target_batch = next(iter(val_data))
+        figure = generate_image(
+            generator,
+            tf.expand_dims(next(iter(example_input_batch)), axis=0),
+            tf.expand_dims(next(iter(example_target_batch)), axis=0),
+            show=epoch % 10 == 0,
         )
+
+        generated_batch = generator(example_input_batch, training=False)
+        l1_val_loss = l1(generated_batch, example_target_batch)
+
         accumulated_l1_loss.append(l1_val_loss)
+        print(f"Epoch: {epoch + 1}, L1 Val Loss: {l1_val_loss}")
 
         wandb.log(
             {
