@@ -254,7 +254,7 @@ def generate_image(
     """
     Generates and optionally displays a generated image
     from the generator model along with the input and
-    ground truth images.
+    ground truth images. Also calculates the L1 validation loss.
 
     :param generator: The generator model
     :param example_input: The input image to be translated
