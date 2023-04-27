@@ -1,5 +1,6 @@
 from typing import Dict, Tuple, Union, cast
 from matplotlib.figure import Figure
+import os
 import numpy as np
 import wandb
 import matplotlib.pyplot as plt
@@ -403,9 +404,14 @@ def fit(
             generator,
             tf.expand_dims(example_input_batch[0], axis=0),
             example_target_batch[0],
-            show=epoch % 10 == 0,
+            show=(epoch + 1) % 10 == 0 or epoch == 0,
         )
         wandb.log({**losses_epoch, "epoch": epoch + 1, "image": figure})
+        if (epoch + 1) % 10 == 0:
+            generator.save(f"generator_{epoch + 1}.h5")
+            discriminator.save(f"discriminator_{epoch + 1}.h5")
+            wandb.save(f"generator_{epoch + 1}.h5")
+            wandb.save(f"discriminator_{epoch + 1}.h5")
 
 
 if __name__ == "__main__":
