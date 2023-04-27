@@ -277,7 +277,7 @@ def generate_image(
     if show:
         plt.show()
 
-    l1_val_loss = bce(generator(example_input, training=False), example_target)
+    l1_val_loss = l1(generator(example_input, training=False), example_target)
 
     return l1_val_loss, fig
 
