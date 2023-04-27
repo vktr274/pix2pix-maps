@@ -1,7 +1,6 @@
 from typing import Dict, Tuple, Union, cast
 from matplotlib.figure import Figure
 import os
-import numpy as np
 import wandb
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -408,10 +407,12 @@ def fit(
         )
         wandb.log({**losses_epoch, "epoch": epoch + 1, "image": figure})
         if (epoch + 1) % 10 == 0:
-            generator.save(f"generator_{epoch + 1}.h5")
-            discriminator.save(f"discriminator_{epoch + 1}.h5")
-            wandb.save(f"generator_{epoch + 1}.h5")
-            wandb.save(f"discriminator_{epoch + 1}.h5")
+            gen_path = os.path.join("checkpoints", f"generator_{epoch + 1}.h5")
+            disc_path = os.path.join("checkpoints", f"discriminator_{epoch + 1}.h5")
+            generator.save(gen_path)
+            discriminator.save(disc_path)
+            wandb.save(gen_path)
+            wandb.save(disc_path)
 
 
 if __name__ == "__main__":
