@@ -1,4 +1,5 @@
 from typing import Dict, Tuple, Union, cast
+from matplotlib.figure import Figure
 import wandb
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -247,7 +248,9 @@ def PatchGAN(
     return Model(inputs=[inputs, targets], outputs=out)
 
 
-def generate_image(generator: Model, example_input, example_target, show=False) -> None:
+def generate_image(
+    generator: Model, example_input, example_target, show=False
+) -> Tuple[tf.Tensor, Figure]:
     """
     Generates and optionally displays a generated image
     from the generator model along with the input and
@@ -258,7 +261,7 @@ def generate_image(generator: Model, example_input, example_target, show=False) 
     :param example_target: The ground truth image
     :param show: Whether to display the generated image
 
-    :return: None
+    :return: L1 validation loss and figure of example input, target and prediction
     """
     prediction = generator(example_input, training=True)
     fig = plt.figure(figsize=(10, 10))
@@ -273,7 +276,10 @@ def generate_image(generator: Model, example_input, example_target, show=False) 
         plt.axis("off")
     if show:
         plt.show()
-    wandb.log({"images": fig}, commit=False)
+
+    l1_val_loss = bce(generator(example_input, training=False), example_target)
+
+    return l1_val_loss, fig
 
 
 @tf.function
@@ -382,10 +388,7 @@ def fit(
             losses_epoch = {k: losses_epoch.get(k, []) + [v] for k, v in losses.items()}
 
             print(
-                f"Epoch: {epoch + 1}, ",
-                f"Step: {step}, ",
-                f"Total Gen Loss: {gen_loss}, ",
-                f"Total Disc Loss: {disc_loss}",
+                f"Epoch: {epoch + 1}, Step: {step}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}",
                 end="\r",
                 flush=True,
             )
@@ -394,10 +397,19 @@ def fit(
         for k, v in losses_epoch.items():
             losses_epoch[k] = tf.reduce_mean(v)
 
-        accumulated_l1_loss.append(losses_epoch["l1_loss"])
+        l1_val_loss, figure = generate_image(
+            generator, example_input, example_target, show=epoch % 10 == 0
+        )
+        accumulated_l1_loss.append(l1_val_loss)
 
-        generate_image(generator, example_input, example_target, show=epoch % 10 == 0)
-        wandb.log({**losses_epoch, "epoch": epoch + 1})
+        wandb.log(
+            {
+                **losses_epoch,
+                "epoch": epoch + 1,
+                "l1_val_loss": l1_val_loss,
+                "image": figure,
+            }
+        )
 
         if patience is not None and len(accumulated_l1_loss) == patience:
             # Stop if every (patience - 1) epochs the L1 loss wasn't decreasing
