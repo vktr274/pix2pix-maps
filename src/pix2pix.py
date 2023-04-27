@@ -1,4 +1,5 @@
-from typing import Tuple, Union
+from typing import Dict, Tuple, Union, cast
+import wandb
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.losses import BinaryCrossentropy, MeanAbsoluteError
@@ -16,7 +17,7 @@ from tensorflow.keras.layers import (
     Concatenate,
 )
 
-bce = BinaryCrossentropy(from_logits=True)
+bce = BinaryCrossentropy()
 l1 = MeanAbsoluteError()
 
 
@@ -25,15 +26,36 @@ def g_loss(
     fake_G: tf.Tensor,
     fake_D: tf.Tensor,
     y: tf.Tensor,
-) -> tf.Tensor:
+) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+    """
+    Calculates the generator loss.
+
+    :param l1_lambda: The lambda value for the L1 loss.
+    :param fake_G: The fake generated image.
+    :param fake_D: The fake discriminator output.
+    :param y: The real image.
+
+    :return: The generator loss, the fake loss, and the L1 loss.
+    """
     fake_loss = bce(tf.ones_like(fake_D), fake_D)
-    return fake_loss + l1_lambda * l1(fake_G, y)
+    l1_loss = l1(fake_G, y)
+    return fake_loss + l1_lambda * l1_loss, fake_loss, l1_loss
 
 
-def d_loss(real_D: tf.Tensor, fake_D: tf.Tensor) -> tf.Tensor:
+def d_loss(
+    real_D: tf.Tensor, fake_D: tf.Tensor
+) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+    """
+    Calculates the discriminator loss.
+
+    :param real_D: The real discriminator output.
+    :param fake_D: The fake discriminator output.
+
+    :return: The discriminator loss, the real discriminator loss, and the fake discriminator loss.
+    """
     real_loss = bce(tf.ones_like(real_D), real_D)
     fake_loss = bce(tf.zeros_like(fake_D), fake_D)
-    return real_loss + fake_loss
+    return real_loss + fake_loss, real_loss, fake_loss
 
 
 def downsampling_block(
@@ -185,15 +207,15 @@ def train_step(
     l1_lambda: float,
     input_image: tf.Tensor,
     target: tf.Tensor,
-) -> Tuple[tf.Tensor, tf.Tensor]:
+) -> Dict[str, tf.Tensor]:
     with tf.GradientTape() as g_tape, tf.GradientTape() as d_tape:
         fake_G = generator(input_image, training=True)
 
         real_D = discriminator([input_image, target], training=True)
         fake_D = discriminator([input_image, fake_G], training=True)
 
-        gen_loss = g_loss(l1_lambda, fake_G, fake_D, target)
-        disc_loss = d_loss(real_D, fake_D)
+        gen_loss, fake_loss, l1_loss = g_loss(l1_lambda, fake_G, fake_D, target)
+        disc_loss, real_d_loss, fake_d_loss = d_loss(real_D, fake_D)
 
     generator_gradients = g_tape.gradient(gen_loss, generator.trainable_variables)
     discriminator_gradients = d_tape.gradient(
@@ -207,7 +229,16 @@ def train_step(
         zip(discriminator_gradients, discriminator.trainable_variables)
     )
 
-    return gen_loss, disc_loss
+    losses = {
+        "gen_loss": gen_loss,
+        "fake_loss": fake_loss,
+        "l1_loss": l1_loss,
+        "disc_loss": disc_loss,
+        "real_d_loss": real_d_loss,
+        "fake_d_loss": fake_d_loss,
+    }
+
+    return losses
 
 
 def generate_image(generator: Model, example_input, example_target):
@@ -236,9 +267,10 @@ def fit(
     l1_lambda: float,
 ) -> None:
     for epoch in range(epochs):
+        losses: Union[Dict[str, tf.Tensor], None] = {}
         example_input, example_target = next(iter(val_data.take(1)))
         for step, (input_image, target) in enumerate(train_data):
-            gen_loss, disc_loss = train_step(
+            losses = train_step(
                 generator,
                 discriminator,
                 generator_optimizer,
@@ -247,12 +279,19 @@ def fit(
                 input_image,
                 target,
             )
+
+            losses = cast(Dict[str, tf.Tensor], losses)
+            gen_loss = losses["gen_loss"]
+            disc_loss = losses["disc_loss"]
+
             print(
                 f"Epoch: {epoch + 1}, Step: {step}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}",
                 end="\r",
                 flush=True,
             )
         print("\n")
+
+        wandb.log({**losses, "epoch": epoch + 1})
         generate_image(generator, example_input, example_target)
 
 
