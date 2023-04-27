@@ -393,13 +393,12 @@ def fit(
                 end="\r",
                 flush=True,
             )
+        print("")
 
         for k, v in losses_epoch.items():
             losses_epoch[k] = tf.reduce_mean(v)
 
-        example_input_batch, example_target_batch = val_data[
-            np.random.randint(0, int(val_data.cardinality()))
-        ]
+        example_input_batch, example_target_batch = next(iter(val_data.take(1)))
         figure = generate_image(
             generator,
             tf.expand_dims(example_input_batch[0], axis=0),
