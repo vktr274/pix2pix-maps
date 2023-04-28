@@ -218,6 +218,9 @@ def PatchGAN(
 
     :return: The PatchGAN discriminator model.
     """
+    if patch_size not in (1, 16, 70, 286):
+        raise ValueError("Patch size must be 1, 16, 70 or 286.")
+
     inputs = Input(shape=input_shape, name="input_image")
     targets = Input(shape=input_shape, name="target_image")
 
