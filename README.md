@@ -89,6 +89,28 @@ The binary crossentropy loss is calculated as mentioned because the discriminato
 
 Training was tracked using [Weights & Biases](https://docs.wandb.ai/) and their Python library. The tracked metrics include total and partial losses for the generator and discriminator. These include all values returned by the loss functions defined above.
 
+The following code snippet is a dictionary of all the tracked metrics:
+
+```py
+losses = {
+    "total_gen_loss": total_gen_loss,
+    "fake_d_real_class_loss": fake_d_real_class_loss,
+    "l1_loss": l1_loss,
+    "total_disc_loss": total_disc_loss,
+    "real_d_loss": real_d_loss,
+    "fake_d_loss": fake_d_loss,
+}
+```
+
+where
+
+- `total_gen_loss` is the total generator loss
+- `fake_d_real_class_loss` is the binary crossentropy loss between the output of the discriminator when presented with the generated image and the real class (tensor of ones)
+- `l1_loss` is the unscaled L1 loss between the generated image and the target ground truth image
+- `total_disc_loss` is the total discriminator loss
+- `real_d_loss` is the binary crossentropy loss between the output of the discriminator when presented with the real image and the real class (tensor of ones)
+- `fake_d_loss` is the binary crossentropy loss between the output of the discriminator when presented with the generated image and the fake class (tensor of zeros)
+
 We also generated an image after every epoch from the validation dataset and logged it to Weights & Biases along with the input image and ground truth image. This was done to be able to visually inspect the quality of the generated images so the number of images generated corresponded with the number of epochs. The validation set was also used for model testing after training was complete - we can afford to do this because GAN models are not validated like other models that can be early stopped based on validation metrics and because image generation during training was not exhaustive of the validation set.
 
 Apart from metrics, we also saved models in h5 format every 10 epochs. This was done to be able to resume training from a checkpoint if the training process was interrupted. The first training was set to 200 epochs but the free GPU runtime on Kaggle got exhausted after 171 epochs on one of our 2 accounts. Thanks to the saved models, we were able to resume training from the last checkpoint on epoch 170 on a different Kaggle account. We decided to continue training the model for 80 more epoch making the total number of epochs 250 instead of 200.
