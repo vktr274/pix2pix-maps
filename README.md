@@ -9,12 +9,6 @@ The goal of this project is to implement the pix2pix model and train it on the [
 
 The dataset used for this project is the paired [pix2pix Maps](http://efrosgans.eecs.berkeley.edu/pix2pix/datasets/maps.tar.gz) dataset containing 1096 training images and 1098 validation images. The dataset contains images of maps and their corresponding satellite images extracted from Google Maps. The dataset is also available on Kaggle [here](https://www.kaggle.com/datasets/alincijov/pix2pix-maps). The dataset is split into two directories - `train` and `val`.
 
-Examples of map and satellite image pairs from the dataset:
-
-![Example 1](./figures/train_images_1.png)
-
-![Example 2](./figures/train_images_2.png)
-
 ### Dataset Preprocessing
 
 The functions used to preprocess the dataset are in the [`src`](./src) directory of this repository in the [`pixutils.py`](./src/pixutils.py) script. The functions are `load_image`, `extract_patches`, `random_jitter`, and `rescale_images`.
@@ -30,6 +24,12 @@ Finally, we normalize the images to the range [-1, 1] by dividing them by 127.5 
 The training dataset is shuffled and batched with a batch size of 1. The validation dataset is also batched with a batch size of 1.
 
 The random jitter step was inspired by the [Image-to-Image Translation with Conditional Adversarial Networks](https://arxiv.org/abs/1611.07004) paper by Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, Alexei A. Efros (2016). The random jitter step is also used in the [TensorFlow pix2pix tutorial](https://www.tensorflow.org/tutorials/generative/pix2pix). The aforementioned paper also recommends a batch size of 1 for the pix2pix model and for GANs in general.
+
+Examples of map and satellite image pairs from the preprocessed training dataset (images were rescaled to [0, 1] for visualization purposes):
+
+![Example 1](./figures/train_images_1.png)
+
+![Example 2](./figures/train_images_2.png)
 
 ## Model
 
