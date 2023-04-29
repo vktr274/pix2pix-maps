@@ -4,8 +4,6 @@ import os
 import wandb
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import tensorflow_probability as tfp
-from tensorflow.keras.applications.inception_v3 import InceptionV3
 from tensorflow.keras.losses import BinaryCrossentropy, MeanAbsoluteError
 from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras import Model, Sequential, Input
@@ -422,56 +420,6 @@ def fit(
             if use_wandb:
                 wandb.save(gen_path)
                 wandb.save(disc_path)
-
-
-def frechet_inception_distance(
-    generator: Model,
-    dataset: tf.data.Dataset,
-    input_shape: Tuple[int, int, int] = (256, 256, 3),
-    pretrained_on: str = "imagenet",
-) -> tf.Tensor:
-    """
-    Calculates the Frechet Inception Distance (FID) for the generator.
-
-    :param generator: The generator model.
-    :param dataset: The batched dataset to use for calculating the FID.
-    :param input_shape: The input shape of the images.
-    :param pretrained_on: Either "imagenet" or path to weights file.
-
-    :return: Tensor containing the FID.
-    """
-    inception = InceptionV3(
-        input_shape=input_shape,
-        include_top=False,
-        pooling="avg",
-        weights=pretrained_on,
-    )
-    inception.trainable = False
-
-    fid = []
-
-    for input_batch, target_batch in dataset:
-        generated_batch = generator(input_batch, training=False)
-
-        real_features = inception(target_batch, training=False)
-        fake_features = inception(generated_batch, training=False)
-
-        real_mean = tf.reduce_mean(real_features)
-        fake_mean = tf.reduce_mean(fake_features)
-
-        real_cov = tfp.stats.covariance(real_features)
-        fake_cov = tfp.stats.covariance(fake_features)
-
-        trace = tf.linalg.trace(
-            real_cov
-            + fake_cov
-            - tf.multiply(2.0, tf.linalg.sqrtm(tf.matmul(real_cov, fake_cov)))
-        )
-        squared_sum = tf.reduce_sum(tf.square(real_mean - fake_mean))
-
-        fid.append(trace + squared_sum)
-
-    return tf.reduce_mean(fid)
 
 
 if __name__ == "__main__":
