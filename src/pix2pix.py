@@ -269,7 +269,7 @@ def generate_image(
     """
     prediction = generator(example_input, training=True)
     l1_loss = l1(example_target, prediction)
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(15, 5))
 
     display_list = [example_input[0], example_target, prediction[0]]
     titles = ["Input Image", "Ground Truth", "Predicted Image"]
@@ -357,6 +357,7 @@ def fit(
     generator_optimizer: Optimizer,
     discriminator_optimizer: Optimizer,
     l1_lambda: float = 100,
+    use_wandb: bool = True,
 ) -> None:
     """
     Trains the pix2pix model.
@@ -408,14 +409,16 @@ def fit(
             example_target_batch[0],
             show=(epoch + 1) % 10 == 0 or epoch == 0,
         )
-        wandb.log({**losses_epoch, "epoch": epoch + 1, "image": figure})
+        if use_wandb:
+            wandb.log({**losses_epoch, "epoch": epoch + 1, "image": figure})
         if (epoch + 1) % 10 == 0:
             gen_path = os.path.join("checkpoints", f"generator_{epoch + 1}.h5")
             disc_path = os.path.join("checkpoints", f"discriminator_{epoch + 1}.h5")
             generator.save(gen_path)
             discriminator.save(disc_path)
-            wandb.save(gen_path)
-            wandb.save(disc_path)
+            if use_wandb:
+                wandb.save(gen_path)
+                wandb.save(disc_path)
 
 
 if __name__ == "__main__":
@@ -426,3 +429,5 @@ if __name__ == "__main__":
     disc = PatchGAN((256, 256, 3))
     disc.summary()
     plot_model(disc, to_file="discriminator.png", show_shapes=True)
+
+    generate_image(gen, tf.zeros((1, 256, 256, 3)), tf.zeros((256, 256, 3)), show=True)
