@@ -392,7 +392,7 @@ def fit(
             losses_epoch = {k: losses_epoch.get(k, []) + [v] for k, v in losses.items()}
 
             print(
-                f"Epoch: {epoch + 1}, Step: {step}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}",
+                f"Epoch: {epoch + 1}, Step: {step + 1}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}",
                 end="\r",
                 flush=True,
             )
