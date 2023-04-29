@@ -1,8 +1,9 @@
+from typing import Tuple, cast
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
 
-def load_image(image_file):
+def load_image(image_file: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     """
     Loads an image from a file and splits it into two images.
 
@@ -22,25 +23,31 @@ def load_image(image_file):
     input_image = tf.cast(input_image, tf.float32)
     real_image = tf.cast(real_image, tf.float32)
 
-    return input_image, real_image
+    return cast(Tuple[tf.Tensor, tf.Tensor], (input_image, real_image))
 
 
-def resize_images(input_image, real_image, resize_to: int):
+def resize_images(
+    input_image: tf.Tensor, real_image: tf.Tensor, resize_to: int
+) -> Tuple[tf.Tensor, tf.Tensor]:
     input_image = tf.image.resize(input_image, (resize_to, resize_to))
     real_image = tf.image.resize(real_image, (resize_to, resize_to))
 
     return input_image, real_image
 
 
-def rescale_images(input_image, real_image):
-    input_image = (input_image / 127.5) - 1.0
-    real_image = (real_image / 127.5) - 1.0
+def rescale_images(
+    input_image: tf.Tensor, real_image: tf.Tensor
+) -> Tuple[tf.Tensor, tf.Tensor]:
+    input_image = tf.subtract(tf.divide(input_image, 127.5), 1.0)
+    real_image = tf.subtract(tf.divide(real_image, 127.5), 1.0)
 
     return input_image, real_image
 
 
 @tf.function
-def random_jitter(input_image, real_image, resize_to: int):
+def random_jitter(
+    input_image: tf.Tensor, real_image: tf.Tensor, resize_to: int
+) -> Tuple[tf.Tensor, tf.Tensor]:
     """
     First resizes images to the given size, then randomly crops them to the original size.
     After that, the images are randomly horizontally flipped.
@@ -69,14 +76,16 @@ def random_jitter(input_image, real_image, resize_to: int):
     )
 
     if tf.random.uniform(()) > 0.5:
-        input_image = tf.image.flip_left_right(input_image)
-        real_image = tf.image.flip_left_right(real_image)
+        input_image = cast(tf.Tensor, tf.image.flip_left_right(input_image))
+        real_image = cast(tf.Tensor, tf.image.flip_left_right(real_image))
 
-    return input_image, real_image
+    return cast(Tuple[tf.Tensor, tf.Tensor], (input_image, real_image))
 
 
 @tf.function
-def extract_patches(input_image, real_image, patch_size: int, num_of_patches: int):
+def extract_patches(
+    input_image: tf.Tensor, real_image: tf.Tensor, patch_size: int, num_of_patches: int
+) -> Tuple[tf.Tensor, tf.Tensor]:
     """
     Extracts patches from the given images.
 
