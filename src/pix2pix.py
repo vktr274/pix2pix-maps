@@ -271,7 +271,7 @@ def generate_image(
     l1_loss = l1(example_target, prediction)
     fig = plt.figure(figsize=(15, 5))
 
-    display_list = [example_input[0], example_target, prediction[0]]
+    display_list = [example_input[0], example_target[0], prediction[0]]
     titles = ["Input Image", "Ground Truth", "Predicted Image"]
 
     for i in range(3):
@@ -394,7 +394,7 @@ def fit(
             losses_epoch = {k: losses_epoch.get(k, []) + [v] for k, v in losses.items()}
 
             print(
-                f"Epoch: {epoch + 1}, Step: {step + 1}, Gen Loss: {gen_loss}, Disc Loss: {disc_loss}",
+                f"Epoch: {epoch + 1}, Step: {step + 1}, Gen Loss: {gen_loss:.4f}, Disc Loss: {disc_loss:.4f}",
                 end="\r",
                 flush=True,
             )
@@ -407,7 +407,7 @@ def fit(
         figure = generate_image(
             generator,
             tf.expand_dims(example_input_batch[0], axis=0),
-            example_target_batch[0],
+            tf.expand_dims(example_target_batch[0], axis=0),
             show=(epoch + 1) % 10 == 0 or epoch == 0,
         )
         if use_wandb:
