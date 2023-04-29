@@ -116,3 +116,5 @@ We also generated an image after every epoch from the validation dataset and log
 Apart from metrics, we also saved models in h5 format every 10 epochs. This was done to be able to resume training from a checkpoint if the training process was interrupted. The first training was set to 200 epochs but the free GPU runtime on Kaggle got exhausted after 172 epochs on one of our 2 accounts. Thanks to the saved models, we were able to resume training from the last checkpoint on epoch 170 on a different Kaggle account. We decided to continue training the model for 80 more epochs making the total number of epochs 250 instead of 200. The training process finished successfully on the second account.
 
 The next training was set to 200 epochs and batch size was increased from 1 to 4. This change significantly sped up training.
+
+The final training was set to 150 epochs and batch size was increased from 4 to 10.
