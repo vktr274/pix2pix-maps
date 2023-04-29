@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple, Union, cast
+from typing import Dict, Optional, Tuple, cast
 from matplotlib.figure import Figure
 import os
 import wandb
