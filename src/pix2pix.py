@@ -358,6 +358,7 @@ def fit(
     discriminator_optimizer: Optimizer,
     l1_lambda: float = 100,
     use_wandb: bool = True,
+    save_checkpoints: bool = True,
 ) -> None:
     """
     Trains the pix2pix model.
@@ -411,7 +412,7 @@ def fit(
         )
         if use_wandb:
             wandb.log({**losses_epoch, "epoch": epoch + 1, "image": figure})
-        if (epoch + 1) % 10 == 0:
+        if save_checkpoints and (epoch + 1) % 10 == 0:
             gen_path = os.path.join("checkpoints", f"generator_{epoch + 1}.h5")
             disc_path = os.path.join("checkpoints", f"discriminator_{epoch + 1}.h5")
             generator.save(gen_path)
