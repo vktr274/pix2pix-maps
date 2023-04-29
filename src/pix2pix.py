@@ -1,9 +1,11 @@
-from typing import Dict, Tuple, Union, cast
+from typing import Dict, Optional, Tuple, Union, cast
 from matplotlib.figure import Figure
 import os
 import wandb
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import tensorflow_probability as tfp
+from tensorflow.keras.applications.inception_v3 import InceptionV3
 from tensorflow.keras.losses import BinaryCrossentropy, MeanAbsoluteError
 from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras import Model, Sequential, Input
@@ -77,7 +79,7 @@ def downsampling_block(
     kernel_size: Tuple[int, int] = (4, 4),
     strides: Tuple[int, int] = (2, 2),
     use_batchnorm: bool = True,
-    dropout: Union[float, None] = None,
+    dropout: Optional[float] = None,
 ) -> Sequential:
     """
     Creates a downsampling block.
@@ -115,7 +117,7 @@ def upsampling_block(
     kernel_size: Tuple[int, int] = (4, 4),
     strides: Tuple[int, int] = (2, 2),
     use_batchnorm: bool = True,
-    dropout: Union[float, None] = None,
+    dropout: Optional[float] = None,
 ) -> Sequential:
     """
     Creates an upsampling block.
@@ -297,8 +299,8 @@ def train_step(
     generator_optimizer: Optimizer,
     discriminator_optimizer: Optimizer,
     l1_lambda: float,
-    input_image: tf.Tensor,
-    target: tf.Tensor,
+    input_batch: tf.Tensor,
+    target_batch: tf.Tensor,
 ) -> Dict[str, tf.Tensor]:
     """
     Performs a single training step for the pix2pix model.
@@ -308,19 +310,19 @@ def train_step(
     :param generator_optimizer: The optimizer for the generator.
     :param discriminator_optimizer: The optimizer for the discriminator.
     :param l1_lambda: The lambda value for the L1 loss.
-    :param input_image: The input image to be translated.
-    :param target: The target ground truth image.
+    :param input_batch: The input image batch to be translated.
+    :param target_batch: The ground truth image batch.
 
     :return: A dictionary containing the losses for the generator and discriminator.
     """
     with tf.GradientTape() as g_tape, tf.GradientTape() as d_tape:
-        fake_g_image = generator(input_image, training=True)
+        fake_g_image = generator(input_batch, training=True)
 
-        real_d_out = discriminator([input_image, target], training=True)
-        fake_d_out = discriminator([input_image, fake_g_image], training=True)
+        real_d_out = discriminator([input_batch, target_batch], training=True)
+        fake_d_out = discriminator([input_batch, fake_g_image], training=True)
 
         total_gen_loss, fake_d_real_class_loss, l1_loss = g_loss(
-            l1_lambda, fake_g_image, fake_d_out, target
+            l1_lambda, fake_g_image, fake_d_out, target_batch
         )
         total_disc_loss, real_d_loss, fake_d_loss = d_loss(real_d_out, fake_d_out)
 
@@ -420,6 +422,56 @@ def fit(
             if use_wandb:
                 wandb.save(gen_path)
                 wandb.save(disc_path)
+
+
+def frechet_inception_distance(
+    generator: Model,
+    dataset: tf.data.Dataset,
+    input_shape: Tuple[int, int, int] = (256, 256, 3),
+    pretrained_on: str = "imagenet",
+) -> tf.Tensor:
+    """
+    Calculates the Frechet Inception Distance (FID) for the generator.
+
+    :param generator: The generator model.
+    :param dataset: The batched dataset to use for calculating the FID.
+    :param input_shape: The input shape of the images.
+    :param pretrained_on: Either "imagenet" or path to weights file.
+
+    :return: Tensor containing the FID.
+    """
+    inception = InceptionV3(
+        input_shape=input_shape,
+        include_top=False,
+        pooling="avg",
+        weights=pretrained_on,
+    )
+    inception.trainable = False
+
+    fid = []
+
+    for input_batch, target_batch in dataset:
+        generated_batch = generator(input_batch, training=False)
+
+        real_features = inception(target_batch, training=False)
+        fake_features = inception(generated_batch, training=False)
+
+        real_mean = tf.reduce_mean(real_features)
+        fake_mean = tf.reduce_mean(fake_features)
+
+        real_cov = tfp.stats.covariance(real_features)
+        fake_cov = tfp.stats.covariance(fake_features)
+
+        trace = tf.linalg.trace(
+            real_cov
+            + fake_cov
+            - tf.multiply(2.0, tf.linalg.sqrtm(tf.matmul(real_cov, fake_cov)))
+        )
+        squared_sum = tf.reduce_sum(tf.square(real_mean - fake_mean))
+
+        fid.append(trace + squared_sum)
+
+    return tf.reduce_mean(fid)
 
 
 if __name__ == "__main__":
