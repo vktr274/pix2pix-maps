@@ -519,8 +519,9 @@ def evaluate(
     n_samples: Optional[int] = None,
 ) -> Dict[str, tf.Tensor]:
     """
-    Evaluates the pix2pix model on a dataset. The resulting evaluation
-    contains the average SSIM and PSNR values over batches in the dataset.
+    Evaluates the pix2pix model on a dataset. The resulting evaluation contains
+    the mean, minimum, maximum and standard deviation of the SSIM, PSNR and L1
+    values over batches in the dataset.
 
     :param generator: Generator model to evaluate.
     :param dataset: Batched dataset to evaluate the model on.
@@ -528,7 +529,8 @@ def evaluate(
     samples are shown. Only one sample is taken from one batch. If the
     number of batches is less than n_samples, all batches are used.
 
-    :return: A dictionary containing the average SSIM and PSNR values.
+    :return: A dictionary containing the mean, minimum, maximum and standard
+    deviation of the SSIM, PSNR and L1 values over batches in the dataset.
     """
     ssim = tf.TensorArray(tf.float32, size=0, dynamic_size=True)
     psnr = tf.TensorArray(tf.float32, size=0, dynamic_size=True)
