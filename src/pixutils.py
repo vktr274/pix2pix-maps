@@ -124,9 +124,9 @@ def show(input_image, real_image, number: int, subset: str) -> None:
     real_image = real_image * 0.5 + 0.5
 
     _, axs = plt.subplots(1, 2)
-    axs[0].axis("off")
-    axs[1].axis("off")
-    axs[0].set_title(f"Input Image {number} ({subset})")
-    axs[1].set_title(f"Real Image {number} ({subset})")
-    axs[0].imshow(input_image, vmin=-1, vmax=1)
-    axs[1].imshow(real_image, vmin=-1, vmax=1)
+    axs[0].axis("off")  # type: ignore
+    axs[1].axis("off")  # type: ignore
+    axs[0].set_title(f"Input Image {number} ({subset})")  # type: ignore
+    axs[1].set_title(f"Real Image {number} ({subset})")  # type: ignore
+    axs[0].imshow(input_image, vmin=-1, vmax=1)  # type: ignore
+    axs[1].imshow(real_image, vmin=-1, vmax=1)  # type: ignore
