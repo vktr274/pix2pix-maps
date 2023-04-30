@@ -50,7 +50,7 @@ def random_jitter(
 ) -> Tuple[tf.Tensor, tf.Tensor]:
     """
     First resizes images to the given size, then randomly crops them to the original size.
-    After that, the images are randomly horizontally flipped.
+    After that, the images are randomly horizontally flipped with a 50% chance.
 
     :param input_image: input image
     :param real_image: real image
@@ -84,7 +84,7 @@ def random_jitter(
 
 @tf.function
 def extract_patches(
-    input_image: tf.Tensor, real_image: tf.Tensor, patch_size: int, num_of_patches: int
+    input_image: tf.Tensor, real_image: tf.Tensor, patch_size: int
 ) -> Tuple[tf.Tensor, tf.Tensor]:
     """
     Extracts patches from the given images.
@@ -92,7 +92,6 @@ def extract_patches(
     :param input_image: input image
     :param real_image: real image
     :param patch_size: size of the patches
-    :param num_of_patches: number of patches that are going to be extracted
 
     :return: input and real image patches
     """
@@ -110,12 +109,12 @@ def extract_patches(
         rates=[1, 1, 1, 1],
         padding="VALID",
     )
+
     input_image_patches = tf.reshape(
-        input_image_patches, (num_of_patches, patch_size, patch_size, 3)
+        input_image_patches, (-1, patch_size, patch_size, 3)
     )
-    real_image_patches = tf.reshape(
-        real_image_patches, (num_of_patches, patch_size, patch_size, 3)
-    )
+    real_image_patches = tf.reshape(real_image_patches, (-1, patch_size, patch_size, 3))
+
     return input_image_patches, real_image_patches
 
 
