@@ -4,12 +4,17 @@ import os
 import wandb
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from tensorflow.keras.losses import BinaryCrossentropy, MeanAbsoluteError
-from tensorflow.keras.initializers import RandomNormal
-from tensorflow.keras import Model, Sequential, Input
-from tensorflow.keras.utils import plot_model
-from tensorflow.keras.optimizers import Optimizer
-from tensorflow.keras.layers import (
+from rich.table import Table
+from rich.console import Console
+from mpl_toolkits.axes_grid1 import ImageGrid
+
+# Ignore warnings due to Pylance not being able to resolve imports
+from tensorflow.keras.losses import BinaryCrossentropy, MeanAbsoluteError  # type: ignore
+from tensorflow.keras.initializers import RandomNormal  # type: ignore
+from tensorflow.keras import Model, Sequential, Input  # type: ignore
+from tensorflow.keras.utils import plot_model  # type: ignore
+from tensorflow.keras.optimizers import Optimizer  # type: ignore
+from tensorflow.keras.layers import (  # type: ignore
     Conv2D,
     Conv2DTranspose,
     BatchNormalization,
@@ -19,8 +24,8 @@ from tensorflow.keras.layers import (
     Concatenate,
 )
 
-bce = BinaryCrossentropy()
-l1 = MeanAbsoluteError()
+bce_object = BinaryCrossentropy()
+l1_object = MeanAbsoluteError()
 
 
 def g_loss(
@@ -43,8 +48,8 @@ def g_loss(
     """
     real_class = tf.ones_like(fake_D_out)
 
-    fake_D_loss = bce(real_class, fake_D_out)
-    l1_loss = l1(fake_G_image, y)
+    fake_D_loss = bce_object(real_class, fake_D_out)
+    l1_loss = l1_object(fake_G_image, y)
 
     return fake_D_loss + l1_lambda * l1_loss, fake_D_loss, l1_loss
 
@@ -66,8 +71,8 @@ def d_loss(
     real_class = tf.ones_like(real_D_out)
     fake_class = tf.zeros_like(fake_D_out)
 
-    real_loss = bce(real_class, real_D_out)
-    fake_loss = bce(fake_class, fake_D_out)
+    real_loss = bce_object(real_class, real_D_out)
+    fake_loss = bce_object(fake_class, fake_D_out)
 
     return real_loss + fake_loss, real_loss, fake_loss
 
@@ -253,7 +258,10 @@ def PatchGAN(
 
 
 def generate_image(
-    generator: Model, example_input, example_target, show=False
+    generator: Model,
+    example_input: tf.Tensor,
+    example_target: tf.Tensor,
+    show: bool = False,
 ) -> Figure:
     """
     Generates and optionally displays a generated image
@@ -268,10 +276,10 @@ def generate_image(
     :return: Figure of example input, target and prediction
     """
     prediction = generator(example_input, training=True)
-    l1_loss = l1(example_target, prediction)
+    l1_loss = l1_object(example_target, prediction)
     fig = plt.figure(figsize=(15, 5))
 
-    display_list = [example_input[0], example_target[0], prediction[0]]
+    display_list = [example_input[0], example_target[0], prediction[0]]  # type: ignore
     titles = ["Input Image", "Ground Truth", "Predicted Image"]
 
     for i in range(3):
@@ -280,7 +288,7 @@ def generate_image(
         if i == 2:
             title += f"\nL1 Loss: {l1_loss:.4f}"
         plt.title(title)
-        plt.imshow(display_list[i] * 0.5 + 0.5)
+        plt.imshow(tf.add(tf.multiply(display_list[i], 0.5), 0.5))
         plt.axis("off")
     if show:
         plt.show()
@@ -288,6 +296,39 @@ def generate_image(
         plt.close()
 
     return fig
+
+
+def show_generated_image(
+    input_image: tf.Tensor,
+    target_image: tf.Tensor,
+    predicted_image: tf.Tensor,
+) -> None:
+    """
+    Displays a generated image from the generator model.
+
+    :param input_image: The input image.
+    :param target_image: The ground truth image.
+    :param predicted_image: The predicted image.
+
+    :return: None
+    """
+    plt.figure(figsize=(15, 5))
+
+    display_list = [input_image, target_image, predicted_image]
+    titles = ["Input Image", "Ground Truth", "Predicted Image"]
+
+    l1_loss = l1_object(target_image, predicted_image)
+
+    for i in range(3):
+        plt.subplot(1, 3, i + 1)
+        title = titles[i]
+        if i == 2:
+            title += f"\nL1 Loss: {l1_loss:.4f}"
+        plt.title(title)
+        plt.imshow(tf.add(tf.multiply(display_list[i], 0.5), 0.5))
+        plt.axis("off")
+
+    plt.show()
 
 
 @tf.function
@@ -349,8 +390,8 @@ def train_step(
 
 
 def fit(
-    train_data,
-    val_data,
+    train_data: tf.data.Dataset,
+    val_data: tf.data.Dataset,
     epochs: int,
     generator: Model,
     discriminator: Model,
@@ -420,6 +461,172 @@ def fit(
             if use_wandb:
                 wandb.save(gen_path)
                 wandb.save(disc_path)
+
+
+@tf.function
+def ssim_rgb(
+    y_true_batch: tf.Tensor, y_pred_batch: tf.Tensor, max_val: float = 1.0
+) -> tf.Tensor:
+    """
+    Computes the structural similarity index between two batches
+    of RGB images for each channel resulting in a weighted average.
+
+    :param y_true_batch: The ground truth RGB image batch.
+    :param y_pred_batch: The predicted RGB image batch.
+    :param max_val: The maximum value of the RGB images.
+
+    :return: The weighted average of the SSIM values for each channel
+    in each batch.
+    """
+    return tf.reduce_mean(
+        [
+            tf.image.ssim(
+                tf.expand_dims(y_true_batch[:, :, :, i], axis=-1),  # type: ignore
+                tf.expand_dims(y_pred_batch[:, :, :, i], axis=-1),  # type: ignore
+                max_val=max_val,
+            )
+            for i in range(3)
+        ]
+    )
+
+
+@tf.function
+def psnr_rgb(
+    y_true_batch: tf.Tensor, y_pred_batch: tf.Tensor, max_val: float = 1.0
+) -> tf.Tensor:
+    """
+    Computes the average peak signal-to-noise ratio between
+    two batches of RGB images.
+
+    :param y_true_batch: The ground truth RGB image batch.
+    :param y_pred_batch: The predicted RGB image batch.
+    :param max_val: The maximum value of the RGB images.
+
+    :return: The average of the PSNR values in each batch.
+    """
+    return tf.reduce_mean(
+        tf.image.psnr(
+            y_true_batch,
+            y_pred_batch,
+            max_val=max_val,
+        )
+    )
+
+
+def evaluate(
+    generator: Model,
+    dataset: tf.data.Dataset,
+    n_samples: Optional[int] = None,
+) -> Dict[str, tf.Tensor]:
+    """
+    Evaluates the pix2pix model on a dataset. The resulting evaluation
+    contains the average SSIM and PSNR values over batches in the dataset.
+
+    :param generator: Generator model to evaluate.
+    :param dataset: Batched dataset to evaluate the model on.
+    :param n_samples: Number of generated samples to show. If None, no
+    samples are shown. Only one sample is taken from one batch. If the
+    number of batches is less than n_samples, all batches are used.
+
+    :return: A dictionary containing the average SSIM and PSNR values.
+    """
+    ssim = tf.TensorArray(tf.float32, size=0, dynamic_size=True)
+    psnr = tf.TensorArray(tf.float32, size=0, dynamic_size=True)
+    l1 = tf.TensorArray(tf.float32, size=0, dynamic_size=True)
+
+    sample_outputs = tf.TensorArray(tf.float32, size=0, dynamic_size=True)
+
+    print("Evaluation started...")
+
+    for batch_index, (input_batch, target_batch) in enumerate(dataset):
+        # training is set to True as per the pix2pix paper to use dropout
+        # and batch normalization using test time statistics
+        predictions = generator(input_batch, training=True)
+
+        if n_samples is not None and batch_index < n_samples:
+            sample_outputs = sample_outputs.write(
+                batch_index, tf.stack([input_batch[0], target_batch[0], predictions[0]])
+            )
+
+        ssim_step = ssim_rgb(target_batch, predictions)
+        psnr_step = psnr_rgb(target_batch, predictions)
+        l1_step = l1_object(target_batch, predictions)
+
+        ssim = ssim.write(batch_index, ssim_step)
+        psnr = psnr.write(batch_index, psnr_step)
+        l1 = l1.write(batch_index, l1_step)
+
+        print(
+            f"Step {batch_index + 1} - SSIM: {ssim_step:.4f}, PSNR: {psnr_step:.4f}, L1: {l1_step:.4f}",
+            end="\r",
+            flush=True,
+        )
+    print("")
+
+    ssim_tensor = ssim.stack()
+    psnr_tensor = psnr.stack()
+    l1_tensor = l1.stack()
+
+    ssim_mean = tf.reduce_mean(ssim_tensor)
+    ssim_min = tf.reduce_min(ssim_tensor)
+    ssim_max = tf.reduce_max(ssim_tensor)
+    ssim_std = tf.math.reduce_std(ssim_tensor)
+
+    psnr_mean = tf.reduce_mean(psnr_tensor)
+    psnr_min = tf.reduce_min(psnr_tensor)
+    psnr_max = tf.reduce_max(psnr_tensor)
+    psnr_std = tf.math.reduce_std(psnr_tensor)
+
+    l1_mean = tf.reduce_mean(l1_tensor)
+    l1_min = tf.reduce_min(l1_tensor)
+    l1_max = tf.reduce_max(l1_tensor)
+    l1_std = tf.math.reduce_std(l1_tensor)
+
+    table = Table("Metric", "Mean", "Min", "Max", "Std", title="Evaluation Results")
+
+    table.add_row(
+        "SSIM",
+        f"{ssim_mean:.4f}",
+        f"{ssim_min:.4f}",
+        f"{ssim_max:.4f}",
+        f"{ssim_std:.4f}",
+    )
+    table.add_row(
+        "PSNR",
+        f"{psnr_mean:.4f}",
+        f"{psnr_min:.4f}",
+        f"{psnr_max:.4f}",
+        f"{psnr_std:.4f}",
+    )
+    table.add_row(
+        "L1",
+        f"{l1_mean:.4f}",
+        f"{l1_min:.4f}",
+        f"{l1_max:.4f}",
+        f"{l1_std:.4f}",
+    )
+
+    console = Console()
+    console.print(table)
+
+    if n_samples is not None:
+        for input_image, target_image, predicted_image in sample_outputs.stack():
+            show_generated_image(input_image, target_image, predicted_image)
+
+    return {
+        "ssim_mean": ssim_mean,
+        "ssim_min": ssim_min,
+        "ssim_max": ssim_max,
+        "ssim_std": ssim_std,
+        "psnr_mean": psnr_mean,
+        "psnr_min": psnr_min,
+        "psnr_max": psnr_max,
+        "psnr_std": psnr_std,
+        "l1_mean": l1_mean,
+        "l1_min": l1_min,
+        "l1_max": l1_max,
+        "l1_std": l1_std,
+    }
 
 
 if __name__ == "__main__":
