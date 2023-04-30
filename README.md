@@ -15,15 +15,18 @@ The functions used to preprocess the dataset are in the [`src`](./src) directory
 
 The map to satellite pairs are in one jpeg file, side-by-side. The size of the images is 600x1200. For this reason, the images need to be split into two separate images. We defined a custom `tf.data.Dataset` pipeline to load the images and split them into two separate 600x600 images. This step is done right after loading the image file in a function called `load_image` which is passed to the `map` function of the dataset pipeline.
 
-The 600x600 are relatively large images, so we incorporated a step to the pipeline to extract 256x256 patches from the images. This step is done in the `extract_patches` function which is also passed to the `map` function of the dataset pipeline. This outputs a dataset of 1096 and 1098 batches of four 256x256 patches for the training and validation sets respectively. For this reason we use the `unbatch` function to get a dataset of 4384 and 4392 patches for the training and validation sets respectively.
+The 600x600 are relatively large images, so we incorporated a step to the pipeline to extract 256x256 patches from the images. This step is done in the `extract_patches` function which is also passed to the `map` function of the dataset pipeline. This outputs a dataset of 1096 and 1098 batches of four 256x256 patches for the training and validation sets respectively. For this reason we use the `unbatch` method to get a dataset of 4384 and 4392 patches for the training and validation sets respectively. This way we are not limited to a batch size of 4 which was output by the `extract_patches` function.
 
-Next we introduce random jitter to the training images by resizing them to 286x286 and then randomly cropping them back to 256x256. After that, we horizontally flip the images with a 50% chance. This is done in the `random_jitter` passed to the `map` function of the dataset pipeline.
+Next we introduce random jitter to the training images by resizing them to 286x286 and then randomly cropping them back to 256x256. After that, we horizontally flip the training images with a 50% chance. This is done in the `random_jitter` passed to the `map` function of the dataset pipeline.
 
-Finally, we normalize the images to the range [-1, 1] by dividing them by 127.5 and subtracting 1. This is done in the `rescale_images` function passed to the `map` function of the dataset pipeline.
+After that we normalize the images to the range [-1, 1] by dividing them by 127.5 and subtracting 1. This is done in the `rescale_images` function passed to the `map` function of the dataset pipeline.
 
-The training dataset is shuffled and batched with a batch size of 1. The validation dataset is also batched with a batch size of 1.
+Finally, the training dataset is shuffled and batched with a set batch size. The validation dataset is also batched with the same batch size but not shuffled.
 
-The random jitter step was inspired by the [Image-to-Image Translation with Conditional Adversarial Networks](https://arxiv.org/abs/1611.07004) paper by Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, Alexei A. Efros (2016). The random jitter step is also used in the [TensorFlow pix2pix tutorial](https://www.tensorflow.org/tutorials/generative/pix2pix). The aforementioned paper also recommends a batch size of 1 for the pix2pix model and for GANs in general.
+**Training data pipeline**: `load_image` -> `extract_patches` -> `unbatch` -> `random_jitter` -> `rescale_images` -> `shuffle` -> `batch`\
+**Validation data pipeline**: `load_image` -> `extract_patches` -> `unbatch` -> `rescale_images` -> `batch`
+
+The random jitter step was inspired by the [Image-to-Image Translation with Conditional Adversarial Networks](https://arxiv.org/abs/1611.07004) paper by Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, Alexei A. Efros (2016). Random jitter is also used in the [TensorFlow pix2pix tutorial](https://www.tensorflow.org/tutorials/generative/pix2pix). The aforementioned paper also recommends a batch size of 1 for the pix2pix model and for GANs in general. However, we also tried different batch sizes.
 
 Examples of map and satellite image pairs from the preprocessed training dataset (images were rescaled to [0, 1] for visualization purposes):
 
