@@ -87,7 +87,7 @@ def extract_patches(
     input_image: tf.Tensor, real_image: tf.Tensor, patch_size: int
 ) -> Tuple[tf.Tensor, tf.Tensor]:
     """
-    Extracts patches from the given images.
+    Extracts non-overlapping patches from the input and real image.
 
     :param input_image: input image
     :param real_image: real image
