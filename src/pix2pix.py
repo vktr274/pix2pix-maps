@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from rich.table import Table
 from rich.console import Console
-from mpl_toolkits.axes_grid1 import ImageGrid
 
 # Ignore warnings due to Pylance not being able to resolve imports
 from tensorflow.keras.losses import BinaryCrossentropy, MeanAbsoluteError  # type: ignore
