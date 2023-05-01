@@ -17,15 +17,23 @@ The map to satellite pairs are in one jpeg file, side-by-side. The size of the i
 
 The 600x600 are relatively large images, so we incorporated a step to the pipeline to extract 256x256 patches from the images. This step is done in the `extract_patches` function which is also passed to the `map` function of the dataset pipeline. This outputs a dataset of 1096 and 1098 batches of four 256x256 patches for the training and validation sets respectively. For this reason we use the `unbatch` method to get a dataset of 4384 and 4392 patches for the training and validation sets respectively. This way we are not limited to a batch size of 4 which was output by the `extract_patches` function.
 
+If we don't want to extract patches, we can use the `resize_images` function instead that resizes the images to 256x256. This function is passed to the `map` function of the dataset pipeline instead of the `extract_patches` function.
+
 Next we introduce random jitter to the training images by resizing them to 286x286 and then randomly cropping them back to 256x256. After that, we horizontally flip the training images with a 50% chance. This is done in the `random_jitter` passed to the `map` function of the dataset pipeline.
 
 After that we normalize the images to the range [-1, 1] by dividing them by 127.5 and subtracting 1. This is done in the `rescale_images` function passed to the `map` function of the dataset pipeline.
 
 Finally, the training dataset is shuffled and batched with a set batch size. The validation dataset is also batched with the same batch size but not shuffled.
 
+We used the following data pipelines for training and validation in our experiments:
+
 **Training data pipeline**: `load_image` -> `extract_patches` -> `unbatch` -> `random_jitter` -> `rescale_images` -> `shuffle` -> `batch`
 
 **Validation data pipeline**: `load_image` -> `extract_patches` -> `unbatch` -> `rescale_images` -> `batch`
+
+**Training data pipeline with no patch extraction**: `load_image` -> `resize_images` -> `random_jitter` -> `rescale_images` -> `shuffle` -> `batch`
+
+**Validation data pipeline with no patch extraction**: `load_image` -> `resize_images` -> `rescale_images` -> `batch`
 
 The random jitter step was inspired by the [Image-to-Image Translation with Conditional Adversarial Networks](https://arxiv.org/abs/1611.07004) paper by Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, Alexei A. Efros (2016). Random jitter is also used in the [TensorFlow pix2pix tutorial](https://www.tensorflow.org/tutorials/generative/pix2pix). The aforementioned paper also recommends a batch size of 1 for the pix2pix model and for GANs in general. However, we also tried different batch sizes.
 
@@ -41,7 +49,9 @@ The model used for this project is the pix2pix model introduced in the [Image-to
 
 The generator only works on 256x256 images since it is fully convolutional and has skip connections that use concatenation to combine outputs of each block in the contracting path with corresponding inputs in the expansive path. To make the generator work on smaller or larger images, the generator architecture needs to be modified to have lesser or more blocks in the contracting and expansive paths since larger images need to be downsampled more and smaller images need to be downsampled less to reach 1x1 spatial resolution.
 
-The discriminator is a PatchGAN discriminator that classifies overlapping patches of the input image as real or fake. PatchGAN was introduced by the authors of the pix2pix paper. The authors found that the best results were achieved by using 70x70 patches so we used that size for our discriminator. The PatchGAN model implementation uses the same downsampling blocks as the generator. The last layer uses the same kernel size of 4 but strides are set to 1 as this layer only reduces depth and not spatial resolution. This layer outputs a single value for each patch which is the probability that the patch is real.
+The discriminator is a PatchGAN model that classifies patches of the input image as real or fake. PatchGAN was introduced by the authors of the pix2pix paper. The authors found that the best results were achieved by using 70x70 patches so we used that size for our discriminator. The other patch sizes can be 1, 16, and 286. In case of 1x1 patches, the discriminator classifies each pixel as real or fake, and in case of 286x286 patches, the discriminator classifies the whole image as real or fake.
+
+The PatchGAN model implementation uses the same downsampling blocks as the generator. The last layer uses the same kernel size of 4 but strides are set to 1 as this layer only reduces depth and not spatial resolution. This layer outputs a single value for each patch which is the probability that the patch is real.
 
 We also use batch normalization and dropout in some blocks following the recommendations of the pix2pix paper. The dropout rate is 0.5. As per the paper, we also use Gaussian weight initialization with a mean of 0 and standard deviation of 0.02. The optimizer used for training both the generator and discriminator is Adam with a learning rate of 0.0002 and beta values of 0.5 and 0.999 for the first and second moments respectively.
 
@@ -115,11 +125,17 @@ where
 - `real_d_loss` is the binary crossentropy loss between the output of the discriminator when presented with the real image and the real class (tensor of ones)
 - `fake_d_loss` is the binary crossentropy loss between the output of the discriminator when presented with the generated image and the fake class (tensor of zeros)
 
-We also generated an image after every epoch from the validation dataset and logged it to Weights & Biases along with the input image and ground truth image. This was done to be able to visually inspect the quality of the generated images so the number of images generated corresponded with the number of epochs. The validation set was also used for model testing after training was complete - we can afford to do this because GAN models are not validated like other models that can be early stopped based on validation metrics and because image generation during training was not exhaustive of the validation set. Apart from metrics, we also saved models in h5 format every 10 epochs. This was done to be able to resume training from a checkpoint if the training process was interrupted.
+We also generated an image after every epoch from the validation dataset and logged it to Weights & Biases along with the input image and ground truth image. This was done to be able to visually inspect the quality of the generated images so the number of images generated corresponded with the number of epochs. The validation set was also used for model testing after training was complete - we can afford to do this because GAN models are not validated like other models that can be early stopped based on simple validation metrics and because image generation during training was not exhaustive of the validation set. Apart from metrics, we also saved models in h5 format every 10 epochs. This was done to be able to resume training from a checkpoint if the training process was interrupted.
 
-The first training was set to 200 epochs but the free GPU runtime on Kaggle got exhausted after 172 epochs on one of our 2 accounts. Thanks to the saved models, we were able to resume training from the last checkpoint on epoch 170 on a different Kaggle account. We decided to continue training the model for 80 more epochs making the total number of epochs 250 instead of 200. The training process finished successfully on the second account. The next training was set to 200 epochs and batch size was increased from 1 to 4. The final training was set to 150 epochs and batch size was increased from 4 to 10.
+The first training was set to 200 epochs but the free GPU runtime on Kaggle got exhausted after 172 epochs on one of our 2 accounts. Thanks to the saved models, we were able to resume training from the last checkpoint on epoch 170 on a different Kaggle account. We decided to continue training the model for 80 more epochs making the total number of epochs 250 instead of 200. The training process finished successfully on the second account and took around 17 hours in total to complete.
 
-The first training with the batch size set to 1 took around 17 hours in total to complete. The second training with a batch size of 4 took 6 hours and 47 minutes to complete. Finally, the third training with the batch size at 10 took 3 hours and 17 minutes to complete. We can see that the training time decreased as the batch size increased.
+The next training was set to 200 epochs and batch size was increased from 1 to 4. This training took 6 hours and 47 minutes to complete.
+
+The following training was set to 150 epochs and batch size was increased from 4 to 10. This training took 3 hours and 17 minutes to complete.
+
+Another training was set to 200 epochs and batch size was set to 1 again. However, we skipped the `extract_patches` step and instead we just resized the images to 256x256 using the `resize_images` function. The training crashed after 160 epoch due to exceeding the RAM size on Kaggle because we increased the buffer size for shuffling to 1096. We continued from the last checkpoint on epoch 160. After the next 20 epochs the training crashed again so we had to decrease the buffer size to 256 to continue training for 20 more epochs. In total, this training took 4 hours and 35 minutes to complete.
+
+Next, we trained the model for 200 epochs with batch size set to 1. We skipped the `extract_patches` and used the `resize_images` function instead again. The PatchGAN model's patch size was set to 16 instead of 70.
 
 ## Evaluation
 
