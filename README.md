@@ -135,7 +135,15 @@ The following training was set to 150 epochs and batch size was increased from 4
 
 Another training was set to 200 epochs and batch size was set to 1 again. However, we skipped the `extract_patches` step and instead we just resized the images to 256x256 using the `resize_images` function. The training crashed after 160 epoch due to exceeding the RAM size on Kaggle because we increased the buffer size for shuffling to 1096. We continued from the last checkpoint on epoch 160. After the next 20 epochs the training crashed again so we had to decrease the buffer size to 256 to continue training for 20 more epochs. In total, this training took 4 hours and 35 minutes to complete.
 
-Next, we trained the model for 200 epochs with batch size set to 1. We skipped the `extract_patches` and used the `resize_images` function instead again. The PatchGAN model's patch size was set to 16 instead of 70.
+Next, we trained the model for 200 epochs with batch size set to 1. We skipped the `extract_patches` and used the `resize_images` function instead again. The PatchGAN model's patch size was set to 16 instead of 70. This led to a significant decrease in generated image quality as there were artifacts caused by small the receptive field of the discriminator. For this reason, we cancelled the training after 79 epochs. The artifacts can be seen in the generated image below.
+
+![Generated image from epoch 79](./figures/patch_size_16_whole_map.png)
+
+The following image is the generated image after the first epoch where we can clearly see the size of the receptive field of the discriminator.
+
+![Generated image from epoch 1](./figures/patch_size_16_whole_map_e1.png)
+
+In the next training, we tried the largest receptive field size for the PatchGAN model which is 286. We trained the model for 200 epochs with batch size set to 1. We used the `extract_patches` function again as the generator was able to generate images with more detail from zoomed in maps - resizing the original images instead of extracting multiple smaller patches from them led to a loss of detail.
 
 ## Evaluation
 
