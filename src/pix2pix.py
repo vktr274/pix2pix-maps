@@ -623,6 +623,17 @@ if __name__ == "__main__":
     gen.summary()
     plot_model(gen, to_file="generator.png", show_shapes=True)
 
-    disc = PatchGAN((256, 256, 3))
+    disc = PatchGAN((256, 256, 3), patch_size=1)
     disc.summary()
-    plot_model(disc, to_file="discriminator.png", show_shapes=True)
+    plot_model(disc, to_file="discriminator1.png", show_shapes=True)
+
+    disc = PatchGAN((256, 256, 3), patch_size=16)
+    plot_model(disc, to_file="discriminator16.png", show_shapes=True)
+
+    disc = PatchGAN((256, 256, 3), patch_size=70)
+    disc.summary()
+    plot_model(disc, to_file="discriminator70.png", show_shapes=True)
+
+    disc = PatchGAN((256, 256, 3), patch_size=286)
+    disc.summary()
+    plot_model(disc, to_file="discriminator286.png", show_shapes=True)
