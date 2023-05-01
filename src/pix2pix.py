@@ -626,5 +626,3 @@ if __name__ == "__main__":
     disc = PatchGAN((256, 256, 3))
     disc.summary()
     plot_model(disc, to_file="discriminator.png", show_shapes=True)
-
-    generate_image(gen, tf.zeros((1, 256, 256, 3)), tf.zeros((256, 256, 3)), show=True)
