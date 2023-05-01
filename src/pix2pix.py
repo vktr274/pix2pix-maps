@@ -499,7 +499,9 @@ def evaluate(
     """
     Evaluates the pix2pix model on a dataset. The resulting evaluation contains
     the mean, minimum, maximum and standard deviation of the SSIM, PSNR and L1
-    values over batches in the dataset.
+    values over batches in the dataset. Please note that the dataset must have
+    every batch of the same size - use the `batch` method with the `drop_remainder`
+    argument set to True on the dataset to ensure this.
 
     :param generator: Generator model to evaluate.
     :param dataset: Batched dataset to evaluate the model on.
