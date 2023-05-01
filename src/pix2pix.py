@@ -468,14 +468,15 @@ def ssim_rgb(
 ) -> tf.Tensor:
     """
     Computes the structural similarity index between two batches
-    of RGB images for each channel resulting in a weighted average.
+    of RGB images for each channel resulting in an average over
+    the channels for each image.
 
     :param y_true_batch: The ground truth RGB image batch.
     :param y_pred_batch: The predicted RGB image batch.
     :param max_val: The maximum value of the RGB images.
 
-    :return: The weighted average of the SSIM values for each channel
-    in each batch.
+    :return: The calculated SSIM for each image in the batch
+    as a tensor of shape (batch_size,).
     """
     return tf.reduce_mean(
         [
@@ -485,30 +486,8 @@ def ssim_rgb(
                 max_val=max_val,
             )
             for i in range(3)
-        ]
-    )
-
-
-@tf.function
-def psnr_rgb(
-    y_true_batch: tf.Tensor, y_pred_batch: tf.Tensor, max_val: float = 1.0
-) -> tf.Tensor:
-    """
-    Computes the average peak signal-to-noise ratio between
-    two batches of RGB images.
-
-    :param y_true_batch: The ground truth RGB image batch.
-    :param y_pred_batch: The predicted RGB image batch.
-    :param max_val: The maximum value of the RGB images.
-
-    :return: The average of the PSNR values in each batch.
-    """
-    return tf.reduce_mean(
-        tf.image.psnr(
-            y_true_batch,
-            y_pred_batch,
-            max_val=max_val,
-        )
+        ],
+        axis=0,
     )
 
 
@@ -549,16 +528,22 @@ def evaluate(
                 batch_index, tf.stack([input_batch[0], target_batch[0], predictions[0]])
             )
 
+        # SSIM, PSNR, and L1 for each image in the batch
         ssim_step = ssim_rgb(target_batch, predictions)
-        psnr_step = psnr_rgb(target_batch, predictions)
-        l1_step = l1_object(target_batch, predictions)
+        psnr_step = tf.image.psnr(target_batch, predictions, max_val=1.0)
+        l1_step = tf.reduce_mean(tf.abs(target_batch - predictions), axis=[1, 2, 3])
 
         ssim = ssim.write(batch_index, ssim_step)
         psnr = psnr.write(batch_index, psnr_step)
         l1 = l1.write(batch_index, l1_step)
 
+        # means over the batch to print
+        ssim_step_mean = tf.reduce_mean(ssim_step)
+        psnr_step_mean = tf.reduce_mean(psnr_step)
+        l1_step_mean = tf.reduce_mean(l1_step)
+
         print(
-            f"Step {batch_index + 1} - SSIM: {ssim_step:.4f}, PSNR: {psnr_step:.4f}, L1: {l1_step:.4f}",
+            f"Means over step {batch_index + 1} - SSIM: {ssim_step_mean:.4f}, PSNR: {psnr_step_mean:.4f}, L1: {l1_step_mean:.4f}",
             end="\r",
             flush=True,
         )
@@ -568,6 +553,7 @@ def evaluate(
     psnr_tensor = psnr.stack()
     l1_tensor = l1.stack()
 
+    # statistics over the whole dataset
     ssim_mean = tf.reduce_mean(ssim_tensor)
     ssim_min = tf.reduce_min(ssim_tensor)
     ssim_max = tf.reduce_max(ssim_tensor)
