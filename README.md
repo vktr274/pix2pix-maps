@@ -172,3 +172,13 @@ The model was evaluated on the validation set of 1098 images. Apart from visuall
 The function aggregates the SSIM, PSNR, and L1 distance between generated images and ground truth images and returns the mean, minimum, maximum, and standard deviation of each metric in a dictionary. The metrics are also printed in a Rich table.
 
 Upon visual inspection we found that the model trained with the batch size set to 10 produced images there were washed out and contained crooked structures. This is caused by the fact that batch normalization aggregated statistics over 10 images. Using a batch size of 1 is an approach to batch normalization called instance normalization which yields better results.
+
+## References
+
+- [Image-to-Image Translation with Conditional Adversarial Networks](https://arxiv.org/abs/1611.07004), Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, Alexei A. Efros, 2016
+
+- [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597), Olaf Ronneberger, Philipp Fischer, and Thomas Brox, 2015
+
+- [TensorFlow pix2pix tutorial](https://www.tensorflow.org/tutorials/generative/pix2pix), The TensorFlow Authors, 2019
+
+- [pix2pix Torch implementation](https://github.com/phillipi/pix2pix), Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, Alexei A. Efros, 2017
