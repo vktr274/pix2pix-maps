@@ -127,13 +127,23 @@ where
 
 We also generated an image after every epoch from the validation dataset and logged it to Weights & Biases along with the input image and ground truth image. This was done to be able to visually inspect the quality of the generated images so the number of images generated corresponded with the number of epochs. The validation set was also used for model testing after training was complete - we can afford to do this because GAN models are not validated like other models that can be early stopped based on simple validation metrics and because image generation during training was not exhaustive of the validation set. Apart from metrics, we also saved models in h5 format every 10 epochs. This was done to be able to resume training from a checkpoint if the training process was interrupted.
 
+### Training 1
+
 The first training was set to 200 epochs but the free GPU runtime on Kaggle got exhausted after 172 epochs on one of our 2 accounts. Thanks to the saved models, we were able to resume training from the last checkpoint on epoch 170 on a different Kaggle account. We decided to continue training the model for 80 more epochs making the total number of epochs 250 instead of 200. The training process finished successfully on the second account and took around 17 hours in total to complete.
+
+### Training 2
 
 The next training was set to 200 epochs and batch size was increased from 1 to 4. This training took 6 hours and 47 minutes to complete.
 
+### Training 3
+
 The following training was set to 150 epochs and batch size was increased from 4 to 10. This training took 3 hours and 17 minutes to complete.
 
+### Training 4
+
 Another training was set to 200 epochs and batch size was set to 1 again. However, we skipped the `extract_patches` step and instead we just resized the images to 256x256 using the `resize_images` function. The training crashed after 160 epoch due to exceeding the RAM size on Kaggle because we increased the buffer size for shuffling to 1096. We continued from the last checkpoint on epoch 160. After the next 20 epochs the training crashed again so we had to decrease the buffer size to 256 to continue training for 20 more epochs. In total, this training took 4 hours and 35 minutes to complete.
+
+### Training 5
 
 Next, we trained the model for 200 epochs with batch size set to 1. We skipped the `extract_patches` and used the `resize_images` function instead again. The PatchGAN model's patch size was set to 16 instead of 70. This led to a significant decrease in generated image quality as there were artifacts caused by small the receptive field of the discriminator. For this reason, we cancelled the training after 79 epochs. The artifacts can be seen in the generated image below.
 
@@ -143,11 +153,17 @@ The following image is the generated image after the first epoch where we can cl
 
 ![Generated image from epoch 1](./figures/patch_size_16_whole_map_e1.png)
 
+### Training 6
+
 In the next training, we tried the largest receptive field size for the PatchGAN model which is 286. We trained the model for 200 epochs with batch size set to 1. We used the `extract_patches` function again as the generator was able to generate images with more detail from zoomed in maps - resizing the original images instead of extracting multiple smaller patches from them led to a loss of detail. After 12 hours the training got interrupted as Kaggle only allows 12 hour sessions. We continued from the last checkpoint on epoch 140. Due to an unknown issue Kaggle crashed and the training got interrupted after 29 more epochs so we had to continue from the last checkpoint on epoch 160. The training lasted 17 hours and 38 minutes in total.
+
+**Note:**
 
 After these trainings we discovered a mistake in our implementation of the PatchGAN model. We were following the pix2pix paper which mentioned that every convolution is strided with a stride of 2. However, the [authors' implementation](https://github.com/phillipi/pix2pix/blob/master/models.lua) in the Torch framework for the Lua language used a stride of 1 for the second to last convolution layer. This means that the receptive field size of our discriminator was 22 instead of 16, 94 instead of 70 or 382 instead of 286.
 
-We fixed the issue and tried training the model again with the same hyperparameters as in the paper. We didn't use our `extract_patches` function. Instead, we only resized the images to 256x256 as in the paper as this approach leads to much faster training because of less data. We trained the model for 200 epochs with batch size set to 1.
+### Training 7
+
+We fixed the receptive field size issue and tried training the model again with the same hyperparameters as in the paper. We didn't use our `extract_patches` function. Instead, we only resized the images to 256x256 as in the paper as this approach leads to much faster training because of less data. We trained the model for 200 epochs with batch size set to 1.
 
 ## Evaluation
 
