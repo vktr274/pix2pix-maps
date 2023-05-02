@@ -37,7 +37,7 @@ We used the following data pipelines for training and validation in our experime
 
 The random jitter step was inspired by the [Image-to-Image Translation with Conditional Adversarial Networks](https://arxiv.org/abs/1611.07004) paper by Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, Alexei A. Efros (2016). Random jitter is also used in the [TensorFlow pix2pix tutorial](https://www.tensorflow.org/tutorials/generative/pix2pix). The aforementioned paper also recommends a batch size of 1 for the pix2pix model and for GANs in general. However, we also tried different batch sizes.
 
-Examples of map and satellite image pairs from the preprocessed training dataset (images were rescaled to [0, 1] for visualization purposes):
+Examples of map and satellite extracted patch pairs from the preprocessed training dataset (images were rescaled to [0, 1] for visualization purposes):
 
 ![Example 1](./figures/train_images_1.png)
 
@@ -143,7 +143,7 @@ The following image is the generated image after the first epoch where we can cl
 
 ![Generated image from epoch 1](./figures/patch_size_16_whole_map_e1.png)
 
-In the next training, we tried the largest receptive field size for the PatchGAN model which is 286. We trained the model for 200 epochs with batch size set to 1. We used the `extract_patches` function again as the generator was able to generate images with more detail from zoomed in maps - resizing the original images instead of extracting multiple smaller patches from them led to a loss of detail.
+In the next training, we tried the largest receptive field size for the PatchGAN model which is 286. We trained the model for 200 epochs with batch size set to 1. We used the `extract_patches` function again as the generator was able to generate images with more detail from zoomed in maps - resizing the original images instead of extracting multiple smaller patches from them led to a loss of detail. After 12 hours the training got interrupted as Kaggle only allows 12 hour sessions. We continued from the last checkpoint on epoch 140. Due to an unknown issue Kaggle crashed and the training got interrupted after 29 more epochs so we had to continue from the last checkpoint on epoch 160.
 
 ## Evaluation
 
