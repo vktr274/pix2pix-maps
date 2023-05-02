@@ -139,14 +139,20 @@ Next, we trained the model for 200 epochs with batch size set to 1. We skipped t
 
 ![Generated image from epoch 79](./figures/patch_size_16_whole_map.png)
 
-The following image is the generated image after the first epoch where we can clearly see the size of the receptive field of the discriminator.
+The following image is the generated image after the first epoch where we can clearly see the impact of the size of the receptive field of the discriminator.
 
 ![Generated image from epoch 1](./figures/patch_size_16_whole_map_e1.png)
 
 In the next training, we tried the largest receptive field size for the PatchGAN model which is 286. We trained the model for 200 epochs with batch size set to 1. We used the `extract_patches` function again as the generator was able to generate images with more detail from zoomed in maps - resizing the original images instead of extracting multiple smaller patches from them led to a loss of detail. After 12 hours the training got interrupted as Kaggle only allows 12 hour sessions. We continued from the last checkpoint on epoch 140. Due to an unknown issue Kaggle crashed and the training got interrupted after 29 more epochs so we had to continue from the last checkpoint on epoch 160.
+
+After these trainings we discovered an issue with our implementation of the PatchGAN model. We were following the pix2pix paper which mentioned that every convolution is strided with a stride of 2. However, the authors' implementation in the Torch framework for the Lua language used a stride of 1 for the second to last convolution layer. This means that the receptive field size of our discriminator was 22 instead of 16, 94 instead of 70 or 382 instead of 286.
+
+We fixed the issue and tried training the model again with the same hyperparameters as in the paper. We didn't use our `extract_patches` function. Instead, we only resized the images to 256x256 as in the paper. We trained the model for 200 epochs with batch size set to 1.
 
 ## Evaluation
 
 The model was evaluated on the validation set of 1098 images. Apart from visually inspecting generated images, we also used a custom function to calculate the Structural Similarity Index (SSIM), Peak Signal-to-Noise ratio (PSNR), and the L1 distance (Mean Absolute Error) between the generated images and the ground truth images. The function is defined in the [`pix2pix.py`](./src/pix2pix.py) script in the `evaluate` function.
 
 The function aggregates the SSIM, PSNR, and L1 distance between generated images and ground truth images and returns the mean, minimum, maximum, and standard deviation of each metric in a dictionary. The metrics are also printed in a Rich table.
+
+Upon visual inspection we found that the model trained with the batch size set to 10 produced images there were washed out and contained crooked structures. This is caused by the fact that batch normalization aggregated statistics over 10 images. Using a batch size of 1 is an approach to batch normalization called instance normalization which yields better results.

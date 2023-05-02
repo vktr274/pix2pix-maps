@@ -234,16 +234,23 @@ def PatchGAN(
     if patch_size == 1:
         kernel_size = (1, 1)
 
-    out = downsampling_block(64, kernel_size=kernel_size, use_batchnorm=False)(out)
-    out = downsampling_block(128, kernel_size=kernel_size)(out)
+    out = downsampling_block(
+        64, kernel_size=kernel_size, use_batchnorm=False, strides=(1, 1) if patch_size == 1 else (2, 2)
+    )(out)
 
-    if patch_size not in (1, 16):
+    out = downsampling_block(
+        128, kernel_size=kernel_size, strides=(2, 2) if patch_size in (70, 286) else (1,1)
+    )(out)
+
+    if patch_size in (70, 286):
         out = downsampling_block(256, kernel_size=kernel_size)(out)
-        out = downsampling_block(512, kernel_size=kernel_size)(out)
 
     if patch_size == 286:
         out = downsampling_block(512, kernel_size=kernel_size)(out)
         out = downsampling_block(512, kernel_size=kernel_size)(out)
+
+    if patch_size in (70, 286):
+        out = downsampling_block(512, kernel_size=kernel_size, strides=(1, 1))(out)
 
     out = Conv2D(
         1,
