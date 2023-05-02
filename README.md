@@ -49,7 +49,7 @@ The model used for this project is the pix2pix model introduced in the [Image-to
 
 The generator only works on 256x256 images since it is fully convolutional and has skip connections that use concatenation to combine outputs of each block in the contracting path with corresponding inputs in the expansive path. To make the generator work on smaller or larger images, the generator architecture needs to be modified to have lesser or more blocks in the contracting and expansive paths since larger images need to be downsampled more and smaller images need to be downsampled less to reach 1x1 spatial resolution.
 
-The discriminator is a PatchGAN model that classifies patches of the input image as real or fake. PatchGAN was introduced by the authors of the pix2pix paper. The authors found that the best results were achieved by using 70x70 patches so we used that size for our discriminator. The other patch sizes can be 1, 16, and 286. In case of 1x1 patches, the discriminator classifies each pixel as real or fake, and in case of 286x286 patches, the discriminator classifies the whole image as real or fake.
+The discriminator is a PatchGAN model, introduced by the authors of the pix2pix paper, that classifies NxN patches of the input image as real or fake. Each activation in the output maps to an NxN receptive field in the input image. The authors found that the best results were achieved by using 70x70 patches so we used that size for our discriminator first, then we tried other sizes too. The other patch sizes can be 1, 16, and 286. In case of 1x1 patches, the discriminator classifies each pixel as real or fake, and in case of 286x286 patches, the discriminator classifies the whole image as real or fake.
 
 The PatchGAN model implementation uses the same downsampling blocks as the generator. The last layer uses the same kernel size of 4 but strides are set to 1 as this layer only reduces depth and not spatial resolution. This layer outputs a single value for each patch which is the probability that the patch is real.
 
@@ -141,7 +141,7 @@ The following training was set to 150 epochs and batch size was increased from 4
 
 ### Training 4
 
-Another training was set to 200 epochs and batch size was set to 1 again. However, we skipped the `extract_patches` step and instead we just resized the images to 256x256 using the `resize_images` function. The training crashed after 160 epoch due to exceeding the RAM size on Kaggle because we increased the buffer size for shuffling to 1096. We continued from the last checkpoint on epoch 160. After the next 20 epochs the training crashed again so we had to decrease the buffer size to 256 to continue training for 20 more epochs. In total, this training took 4 hours and 35 minutes to complete.
+Another training was set to 200 epochs and batch size was set to 1 again. However, we skipped the `extract_patches` step and instead we just resized the images to 256x256 using the `resize_images` function. The training crashed after 160 epoch due to exceeding the RAM size on Kaggle because we increased the buffer size for shuffling to 1096. We continued from the last checkpoint on epoch 160. After the next 20 epochs the training crashed again so we had to decrease the buffer size to 256 to continue training for 20 more epochs. In total, this training took 4 hours and 35 minutes to complete. By only resizing the images, the generated images suffered from lesser detail present in the training images.
 
 ### Training 5
 
@@ -155,7 +155,7 @@ The following image is the generated image after the first epoch where we can cl
 
 ### Training 6
 
-In the next training, we tried the largest receptive field size for the PatchGAN model which is 286. We trained the model for 200 epochs with batch size set to 1. We used the `extract_patches` function again as the generator was able to generate images with more detail from zoomed in maps - resizing the original images instead of extracting multiple smaller patches from them led to a loss of detail. After 12 hours the training got interrupted as Kaggle only allows 12 hour sessions. We continued from the last checkpoint on epoch 140. Due to an unknown issue Kaggle crashed and the training got interrupted after 29 more epochs so we had to continue from the last checkpoint on epoch 160. The training lasted 17 hours and 38 minutes in total.
+In the next training, we tried the largest receptive field size for the PatchGAN model which is 286. We trained the model for 200 epochs with batch size set to 1. We used the `extract_patches` function again as the generator was able to generate images with more detail from zoomed in maps - resizing the original images instead of extracting multiple smaller patches from them led to a loss of detail. After 12 hours the training got interrupted as Kaggle only allows 12 hour sessions. We continued from the last checkpoint on epoch 140. Due to an unknown issue Kaggle crashed and the training got interrupted after 29 more epochs so we had to continue from the last checkpoint on epoch 160. The training lasted 17 hours and 38 minutes in total. The larger receptive field size seemed to have a positive impact on the generated images, judging by the generated validation images during training.
 
 **Note:**
 
@@ -163,7 +163,13 @@ After these trainings we discovered a mistake in our implementation of the Patch
 
 ### Training 7
 
-We fixed the receptive field size issue and tried training the model again with the same hyperparameters as in the paper. We didn't use our `extract_patches` function. Instead, we only resized the images to 256x256 as in the paper as this approach leads to much faster training because of less data. We trained the model for 200 epochs with batch size set to 1.
+We fixed the receptive field size issue and tried training the model again with the same hyperparameters as in the paper. We didn't use our `extract_patches` function. Instead, we only resized the images to 256x256 as in the paper. We trained the model for 200 epochs with batch size set to 1. This training furter confirmed that not using `extract_patches` leads to a loss of detail in the generated images. The training lasted 4 hours and 6 minutes.
+
+We decided to continue training the model for 200 more epochs to see if more training would lead to better results. We continued from the last checkpoint on epoch 200. **TODO** **TODO** **TODO** **TODO**
+
+### Training 8
+
+Since the previous trainings confirmed that using `extract_patches` leads to better results, we continued using it in the next training. To confirm that the larger receptive field size has a positive impact on the generated images after fixing the receptive field size issue, we trained the model for 200 epochs with batch size set to 1. We set the PatchGAN model's patch size to 286. Due to time constraints, this training was our final experiment. **TODO** **TODO** **TODO** **TODO**
 
 ## Evaluation
 
@@ -172,6 +178,8 @@ The model was evaluated on the validation set of 1098 images. Apart from visuall
 The function aggregates the SSIM, PSNR, and L1 distance between generated images and ground truth images and returns the mean, minimum, maximum, and standard deviation of each metric in a dictionary. The metrics are also printed in a Rich table.
 
 Upon visual inspection we found that the model trained with the batch size set to 10 produced images there were washed out and contained crooked structures. This is caused by the fact that batch normalization aggregated statistics over 10 images. Using a batch size of 1 is an approach to batch normalization called instance normalization which yields better results.
+
+**TODO** **TODO** **TODO** **TODO**
 
 ## References
 
