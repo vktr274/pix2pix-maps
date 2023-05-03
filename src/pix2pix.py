@@ -521,7 +521,7 @@ def highpass_l1_loss(
     :param y_pred_batch: The predicted RGB image batch.
     :param laplacian_filter: The laplacian filter to use as the highpass filter.
 
-    :return: The calculated L1 loss for each image in the batch
+    :return: The calculated highpass L1 loss for each image in the batch
     as a tensor of shape (batch_size,).
     """
     # make highpass filter 3 channel
