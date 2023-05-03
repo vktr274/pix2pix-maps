@@ -476,7 +476,7 @@ def fit(
 
 @tf.function
 def ssim_rgb(
-    y_true_batch: tf.Tensor, y_pred_batch: tf.Tensor, max_val: float = 1.0
+    y_true_batch: tf.Tensor, y_pred_batch: tf.Tensor, max_val: float = 2.0
 ) -> tf.Tensor:
     """
     Computes the structural similarity index between two batches
@@ -485,7 +485,8 @@ def ssim_rgb(
 
     :param y_true_batch: The ground truth RGB image batch.
     :param y_pred_batch: The predicted RGB image batch.
-    :param max_val: The maximum value of the RGB images.
+    :param max_val: The difference between the maximum and minimum possible
+    pixel values.
 
     :return: The calculated SSIM for each image in the batch
     as a tensor of shape (batch_size,).
@@ -544,7 +545,7 @@ def evaluate(
 
         # SSIM, PSNR, and L1 for each image in the batch
         ssim_step = ssim_rgb(target_batch, predictions)
-        psnr_step = tf.image.psnr(target_batch, predictions, max_val=1.0)
+        psnr_step = tf.image.psnr(target_batch, predictions, max_val=2.0)
         l1_step = tf.reduce_mean(tf.abs(target_batch - predictions), axis=[1, 2, 3])
 
         ssim = ssim.write(batch_index, ssim_step)
