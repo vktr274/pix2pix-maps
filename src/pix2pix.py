@@ -504,6 +504,46 @@ def ssim_rgb(
     )
 
 
+@tf.function
+def highpass_l1_loss(
+    y_true_batch: tf.Tensor, y_pred_batch: tf.Tensor, laplacian_filter: tf.Tensor
+) -> tf.Tensor:
+    """
+    Applies a highpass filter to the ground truth and predicted batches
+    of images. The filter is applied convolutionally over 3 channels with
+    a stride of 1 and same padding. The convolution produces a batch of
+    single channel images. The L1 loss is then calculated between the
+    filtered ground truth and predicted batches of images.
+
+    Laplacian 3x3 filter: `[[0, -1, 0], [-1, 4, -1], [0, -1, 0]]`
+
+    :param y_true_batch: The ground truth RGB image batch.
+    :param y_pred_batch: The predicted RGB image batch.
+    :param laplacian_filter: The laplacian filter to use as the highpass filter.
+
+    :return: The calculated L1 loss for each image in the batch
+    as a tensor of shape (batch_size,).
+    """
+    # make highpass filter 3 channel
+    laplacian_filter = tf.stack(
+        [laplacian_filter, laplacian_filter, laplacian_filter], axis=-1
+    )
+    # add output channel dimension
+    laplacian_filter = tf.expand_dims(laplacian_filter, axis=-1)
+
+    y_true_batch = tf.nn.conv2d(
+        y_true_batch, laplacian_filter, strides=1, padding="SAME"
+    )
+    y_pred_batch = tf.nn.conv2d(
+        y_pred_batch, laplacian_filter, strides=1, padding="SAME"
+    )
+
+    y_true_batch = tf.divide(y_true_batch, tf.reduce_max(tf.abs(y_true_batch)))
+    y_pred_batch = tf.divide(y_pred_batch, tf.reduce_max(tf.abs(y_pred_batch)))
+
+    return tf.reduce_mean(tf.abs(y_pred_batch - y_true_batch), axis=[1, 2, 3])
+
+
 def evaluate(
     generator: Model,
     dataset: tf.data.Dataset,
@@ -528,8 +568,13 @@ def evaluate(
     ssim = tf.TensorArray(tf.float32, size=0, dynamic_size=True)
     psnr = tf.TensorArray(tf.float32, size=0, dynamic_size=True)
     l1 = tf.TensorArray(tf.float32, size=0, dynamic_size=True)
+    hp_l1 = tf.TensorArray(tf.float32, size=0, dynamic_size=True)
 
     sample_outputs = tf.TensorArray(tf.float32, size=0, dynamic_size=True)
+
+    laplacian_filter = tf.constant(
+        [[0, -1, 0], [-1, 4, -1], [0, -1, 0]], dtype=tf.float32
+    )
 
     print("Evaluation started...")
 
@@ -543,22 +588,25 @@ def evaluate(
                 batch_index, tf.stack([input_batch[0], target_batch[0], predictions[0]])
             )
 
-        # SSIM, PSNR, and L1 for each image in the batch
+        # SSIM, PSNR, L1, and highpass L1 for each image in the batch
         ssim_step = ssim_rgb(target_batch, predictions)
         psnr_step = tf.image.psnr(target_batch, predictions, max_val=2.0)
         l1_step = tf.reduce_mean(tf.abs(target_batch - predictions), axis=[1, 2, 3])
+        hp_l1_step = highpass_l1_loss(target_batch, predictions, laplacian_filter)
 
         ssim = ssim.write(batch_index, ssim_step)
         psnr = psnr.write(batch_index, psnr_step)
         l1 = l1.write(batch_index, l1_step)
+        hp_l1 = hp_l1.write(batch_index, hp_l1_step)
 
         # means over the batch to print
         ssim_step_mean = tf.reduce_mean(ssim_step)
         psnr_step_mean = tf.reduce_mean(psnr_step)
         l1_step_mean = tf.reduce_mean(l1_step)
+        hp_l1_step_mean = tf.reduce_mean(hp_l1_step)
 
         print(
-            f"Means over step {batch_index + 1} - SSIM: {ssim_step_mean:.4f}, PSNR: {psnr_step_mean:.4f}, L1: {l1_step_mean:.4f}",
+            f"Means over step {batch_index + 1} - SSIM: {ssim_step_mean:.4f}, PSNR: {psnr_step_mean:.4f}, L1: {l1_step_mean:.4f}, HP-L1: {hp_l1_step_mean:.4f}",
             end="\r",
             flush=True,
         )
@@ -567,6 +615,7 @@ def evaluate(
     ssim_tensor = ssim.stack()
     psnr_tensor = psnr.stack()
     l1_tensor = l1.stack()
+    hp_l1_tensor = hp_l1.stack()
 
     # statistics over the whole dataset
     ssim_mean = tf.reduce_mean(ssim_tensor)
@@ -583,6 +632,11 @@ def evaluate(
     l1_min = tf.reduce_min(l1_tensor)
     l1_max = tf.reduce_max(l1_tensor)
     l1_std = tf.math.reduce_std(l1_tensor)
+
+    hp_l1_mean = tf.reduce_mean(hp_l1_tensor)
+    hp_l1_min = tf.reduce_min(hp_l1_tensor)
+    hp_l1_max = tf.reduce_max(hp_l1_tensor)
+    hp_l1_std = tf.math.reduce_std(hp_l1_tensor)
 
     table = Table("Metric", "Mean", "Min", "Max", "Std", title="Evaluation Results")
 
@@ -607,6 +661,13 @@ def evaluate(
         f"{l1_max:.4f}",
         f"{l1_std:.4f}",
     )
+    table.add_row(
+        "HP-L1",
+        f"{hp_l1_mean:.4f}",
+        f"{hp_l1_min:.4f}",
+        f"{hp_l1_max:.4f}",
+        f"{hp_l1_std:.4f}",
+    )
 
     console = Console()
     console.print(table)
@@ -628,6 +689,10 @@ def evaluate(
         "l1_min": l1_min,
         "l1_max": l1_max,
         "l1_std": l1_std,
+        "hp_l1_mean": hp_l1_mean,
+        "hp_l1_min": hp_l1_min,
+        "hp_l1_max": hp_l1_max,
+        "hp_l1_std": hp_l1_std,
     }
 
 
