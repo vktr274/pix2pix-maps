@@ -235,11 +235,16 @@ def PatchGAN(
         kernel_size = (1, 1)
 
     out = downsampling_block(
-        64, kernel_size=kernel_size, use_batchnorm=False, strides=(1, 1) if patch_size == 1 else (2, 2)
+        64,
+        kernel_size=kernel_size,
+        use_batchnorm=False,
+        strides=(1, 1) if patch_size == 1 else (2, 2),
     )(out)
 
     out = downsampling_block(
-        128, kernel_size=kernel_size, strides=(2, 2) if patch_size in (70, 286) else (1,1)
+        128,
+        kernel_size=kernel_size,
+        strides=(2, 2) if patch_size in (70, 286) else (1, 1),
     )(out)
 
     if patch_size in (70, 286):
