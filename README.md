@@ -169,17 +169,67 @@ We decided to continue training the model for 200 more epochs to see if more tra
 
 ### Training 8
 
-Since the previous trainings confirmed that using `extract_patches` leads to better results, we continued using it in the next training. To confirm that the larger receptive field size has a positive impact on the generated images after fixing the receptive field size issue, we trained the model for 200 epochs with batch size set to 1. We set the PatchGAN model's patch size to 286. Due to time constraints, this training was our final experiment. **TODO** **TODO** **TODO** **TODO**
+Since the previous trainings confirmed that using `extract_patches` leads to better results, we continued using it in the next training. To confirm that the larger receptive field size has a positive impact on the generated images after fixing the receptive field size issue, we trained the model for 200 epochs with batch size set to 1. We set the PatchGAN model's patch size to 286. The generated images during training looked more detailed than the images that were only resized and the largest patch size led to the best results so far. The training lasted 16 hours and 55 minutes.
+
+### Training 9
+
+In the next training, we set the PatchGAN model's patch size to 70. We trained the model for 200 epochs with batch size set to 1. We already trained the model with these hyperparameters in training 1, however, it was with the mistake in the implementation of the PatchGAN model. We used our `extract_patches` function again.
 
 ## Evaluation
 
-The model was evaluated on the validation set of 1098 images. Apart from visually inspecting generated images, we also used a custom function to calculate the Structural Similarity Index (SSIM), Peak Signal-to-Noise ratio (PSNR), and the L1 distance (Mean Absolute Error) between the generated images and the ground truth images. The function is defined in the [`pix2pix.py`](./src/pix2pix.py) script in the `evaluate` function.
+The model was evaluated on the validation set of 1098 images. Apart from visually inspecting generated images, we also used a custom function to calculate the Structural Similarity Index (SSIM), Peak Signal-to-Noise ratio (PSNR), and the L1 distance (Mean Absolute Error) between the generated images and the ground truth images. In addition to that, we also calculated the L1 distance between highpass filtered generated images and highpass filtered ground truth images to see how well edges are preserved. We named this metric HP-L1. The highpass filter was implemented using a 3x3 Laplacian kernel which is defined as a `tf.constant` and is applied convolutionally to the images using the `tf.nn.conv2d` function with a stride of 1 and same padding. The kernel is defined as follows:
 
-The function aggregates the SSIM, PSNR, and L1 distance between generated images and ground truth images and returns the mean, minimum, maximum, and standard deviation of each metric in a dictionary. The metrics are also printed in a Rich table.
+```py
+tf.constant(
+    [
+        [0, -1, 0],
+        [-1, 4, -1],
+        [0, -1, 0]
+    ],
+    dtype=tf.float32
+)
+```
 
-Upon visual inspection we found that the model trained with the batch size set to 10 produced images there were washed out and contained crooked structures. This is caused by the fact that batch normalization aggregated statistics over 10 images. Using a batch size of 1 is an approach to batch normalization called instance normalization which yields better results.
+The evaluation function is defined in the [`pix2pix.py`](./src/pix2pix.py) script in the `evaluate` function. The function aggregates the SSIM, PSNR, L1 distance, and HP-L1 distance between generated images and ground truth images and returns the mean, minimum, maximum, and standard deviation of each metric in a dictionary. The metrics are also printed in a Rich table.
 
-**TODO** **TODO** **TODO** **TODO**
+Upon visual inspection we found that the model trained with the batch size set to 10 produced images there were washed out and contained crooked structures. Using a batch size of 4 wasn't optimal either. This is caused by the fact that batch normalization aggregated statistics over 10 images. Using a batch size of 1 is an approach to batch normalization called instance normalization which yields better results.
+
+Using PatchGAN receptive field sizes smaller than 70x70 led to artifacts in the generated images. The largest receptive field size of 286x286 led to the best results. The model trained with `extract_patches` produced better results than the model trained with resized images since there wasn't as much loss of detail. The model trained with the largest receptive field size of 286x286 and `extract_patches` produced the best results overall.
+
+We used the models from [training 7](#training-7), [training 8](#training-8), and [training 9](#training-9) for the evaluation. The results are shown in the following table. We also include generated image samples from each model.
+
+### Model from training 7
+
+| Metric | Mean | Minimum | Maximum | Standard deviation |
+| --- | --- | --- | --- | --- |
+
+**TODO:** Add metrics
+
+**Sample generated images:**
+
+**TODO:** Add images
+
+### Model from training 8
+
+| Metric | Mean | Minimum | Maximum | Standard deviation |
+| --- | --- | --- | --- | --- |
+
+**TODO:** Add metrics
+
+**Sample generated images:**
+
+**TODO:** Add images
+
+### Model from training 9
+
+| Metric | Mean | Minimum | Maximum | Standard deviation |
+| --- | --- | --- | --- | --- |
+
+**TODO:** Add metrics
+
+**Sample generated images:**
+
+**TODO:** Add images
 
 ## References
 
