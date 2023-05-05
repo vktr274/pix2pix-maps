@@ -212,7 +212,7 @@ tf.constant(
 
 The evaluation function is defined in the [`pix2pix.py`](./src/pix2pix.py) script in the `evaluate` function. The function aggregates the SSIM, PSNR, L1 distance, and HP-L1 distance between generated images and ground truth images and returns the mean, minimum, maximum, and standard deviation of each metric in a dictionary. The metrics are also printed in a Rich table.
 
-Upon visual inspection we found that the model trained with the batch size set to 10 produced images there were washed out and contained crooked structures. Using a batch size of 4 wasn't optimal either. This is caused by the fact that batch normalization aggregated statistics over 10 images. Using a batch size of 1 is an approach to batch normalization called instance normalization which yields better results.
+Upon visual inspection we found that the model trained with the batch size set to 10 produced lower quality images. Using a batch size of 4 wasn't optimal either. This is caused by the fact that batch normalization aggregated statistics over 10 and 4 images for batch sizes of 10 and 4 respectively. Using a batch size of 1 is an approach to batch normalization called instance normalization which yields better results.
 
 Using PatchGAN with a receptive field of 16x16 led to artifacts in the generated images, therefore we do not include it in the final evaluattion. The larger receptive field sizes of 70x70 and 286x286 led to the best results. The models trained with `extract_patches` produced better results than the model trained using only resized images.
 
