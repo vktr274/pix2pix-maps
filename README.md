@@ -209,18 +209,37 @@ The results are shown in the following table. We also include generated image sa
 Batch size: 1\
 PatchGAN receptive field size: 70\
 Epochs: 400\
-Images: resized
+Images: resized only
 
-| Metric | Mean | Minimum | Maximum | Standard deviation |
-| --- | --- | --- | --- | --- |
-│ SSIM   │ 0.1117  │ 0.0256  │ 0.8711  │ 0.1124 │
-│ PSNR   │ 14.2976 │ 10.7300 │ 27.7124 │ 2.1979 │
-│ L1     │ 0.2992  │ 0.0716  │ 0.4493  │ 0.0630 │
-│ HP-L1  │ 0.1258  │ 0.0308  │ 0.1767  │ 0.0247 │
+| Metric | Mean    | Minimum | Maximum | Standard deviation |
+| ---    | ---     | ---     | ---     | ---                |
+| SSIM   | 0.1117  | 0.0256  | 0.8711  | 0.1124             |
+| PSNR   | 14.2976 | 10.7300 | 27.7124 | 2.1979             |
+| L1     | 0.2992  | 0.0716  | 0.4493  | 0.0630             |
+| HP-L1  | 0.1258  | 0.0308  | 0.1767  | 0.0247             |
 
 **Sample generated images:**
 
-**TODO:** Add images
+![Sample 1 - Training 7](./figures/training_7/t7_0.png)
+
+![Sample 2 - Training 7](./figures/training_7/t7_1.png)
+
+<details>
+  <summary>Show more</summary>
+
+![Sample 3 - Training 7](./figures/training_7/t7_2.png)
+
+![Sample 4 - Training 7](./figures/training_7/t7_3.png)
+
+![Sample 5 - Training 7](./figures/training_7/t7_4.png)
+
+![Sample 6 - Training 7](./figures/training_7/t7_5.png)
+
+![Sample 7 - Training 7](./figures/training_7/t7_6.png)
+
+![Sample 8 - Training 7](./figures/training_7/t7_7.png)
+
+</details>
 
 ### Model from training 8
 
@@ -229,16 +248,35 @@ PatchGAN receptive field size: 286\
 Epochs: 200\
 Images: preprocessed with `extract_patches`
 
-| Metric | Mean | Minimum | Maximum | Standard deviation |
-| --- | --- | --- | --- | --- |
-│ SSIM   │ 0.1656  │ -0.0550 │ 0.9602  │ 0.1356 │
-│ PSNR   │ 14.5018 │ 8.0866  │ 34.5621 │ 2.7823 │
-│ L1     │ 0.2977  │ 0.0290  │ 0.7322  │ 0.0722 │
-│ HP-L1  │ 0.1136  │ 0.0134  │ 0.1728  │ 0.0254 │
+| Metric | Mean    | Minimum | Maximum | Standard deviation |
+| ---    | ---     | ---     | ---     | ---                |
+| SSIM   | 0.1656  | -0.0550 | 0.9602  | 0.1356             |
+| PSNR   | 14.5018 | 8.0866  | 34.5621 | 2.7823             |
+| L1     | 0.2977  | 0.0290  | 0.7322  | 0.0722             |
+| HP-L1  | 0.1136  | 0.0134  | 0.1728  | 0.0254             |
 
 **Sample generated images:**
 
-**TODO:** Add images
+![Sample 1 - Training 8](./figures/training_8/t8_0.png)
+
+![Sample 2 - Training 8](./figures/training_8/t8_1.png)
+
+<details>
+  <summary>Show more</summary>
+
+![Sample 3 - Training 8](./figures/training_8/t8_2.png)
+
+![Sample 4 - Training 8](./figures/training_8/t8_3.png)
+
+![Sample 5 - Training 8](./figures/training_8/t8_4.png)
+
+![Sample 6 - Training 8](./figures/training_8/t8_5.png)
+
+![Sample 7 - Training 8](./figures/training_8/t8_6.png)
+
+![Sample 8 - Training 8](./figures/training_8/t8_7.png)
+
+</details>
 
 ### Model from training 9
 
@@ -247,16 +285,35 @@ PatchGAN receptive field size: 70\
 Epochs: 200\
 Images: preprocessed with `extract_patches`
 
-| Metric | Mean | Minimum | Maximum | Standard deviation |
-| --- | --- | --- | --- | --- |
-│ SSIM   │ 0.1576  │ -0.0621 │ 0.9641  │ 0.1427 │
-│ PSNR   │ 14.1460 │ 8.6875  │ 33.6759 │ 2.9903 │
-│ L1     │ 0.3114  │ 0.0299  │ 0.6231  │ 0.0805 │
-│ HP-L1  │ 0.1108  │ 0.0111  │ 0.1648  │ 0.0261 │
+| Metric | Mean    | Minimum | Maximum | Standard deviation |
+| ---    | ---     | ---     | ---     | ---                |
+| SSIM   | 0.1576  | -0.0621 | 0.9641  | 0.1427             |
+| PSNR   | 14.1460 | 8.6875  | 33.6759 | 2.9903             |
+| L1     | 0.3114  | 0.0299  | 0.6231  | 0.0805             |
+| HP-L1  | 0.1108  | 0.0111  | 0.1648  | 0.0261             |
 
 **Sample generated images:**
 
-**TODO:** Add images
+![Sample 1 - Training 9](./figures/training_9/t9_0.png)
+
+![Sample 2 - Training 9](./figures/training_9/t9_1.png)
+
+<details>
+  <summary>Show more</summary>
+
+![Sample 3 - Training 9](./figures/training_9/t9_2.png)
+
+![Sample 4 - Training 9](./figures/training_9/t9_3.png)
+
+![Sample 5 - Training 9](./figures/training_9/t9_4.png)
+
+![Sample 6 - Training 9](./figures/training_9/t9_5.png)
+
+![Sample 7 - Training 9](./figures/training_9/t9_6.png)
+
+![Sample 8 - Training 9](./figures/training_9/t9_7.png)
+
+</details>
 
 ### Model from training 2
 
@@ -265,16 +322,35 @@ PatchGAN receptive field size: 94 (mistake in implementation)\
 Epochs: 200\
 Images: preprocessed with `extract_patches`
 
-| Metric | Mean | Minimum | Maximum | Standard deviation |
-| --- | --- | --- | --- | --- |
-│ SSIM   │ 0.1592  │ -0.0381 │ 0.9653  │ 0.1364 │
-│ PSNR   │ 14.6817 │ 8.7748  │ 33.6167 │ 2.8260 │
-│ L1     │ 0.2913  │ 0.0332  │ 0.6202  │ 0.0720 │
-│ HP-L1  │ 0.0969  │ 0.0089  │ 0.1416  │ 0.0225 │
+| Metric | Mean    | Minimum | Maximum | Standard deviation |
+| ---    | ---     | ---     | ---     | ---                |
+| SSIM   | 0.1592  | -0.0381 | 0.9653  | 0.1364             |
+| PSNR   | 14.6817 | 8.7748  | 33.6167 | 2.8260             |
+| L1     | 0.2913  | 0.0332  | 0.6202  | 0.0720             |
+| HP-L1  | 0.0969  | 0.0089  | 0.1416  | 0.0225             |
 
 **Sample generated images:**
 
-**TODO:** Add images
+![Sample 1 - Training 2](./figures/training_2/t2_0.png)
+
+![Sample 2 - Training 2](./figures/training_2/t2_1.png)
+
+<details>
+  <summary>Show more</summary>
+
+![Sample 3 - Training 2](./figures/training_2/t2_2.png)
+
+![Sample 4 - Training 2](./figures/training_2/t2_3.png)
+
+![Sample 5 - Training 2](./figures/training_2/t2_4.png)
+
+![Sample 6 - Training 2](./figures/training_2/t2_5.png)
+
+![Sample 7 - Training 2](./figures/training_2/t2_6.png)
+
+![Sample 8 - Training 2](./figures/training_2/t2_7.png)
+
+</details>
 
 ### Model from training 3
 
@@ -283,16 +359,35 @@ PatchGAN receptive field size: 94 (mistake in implementation)\
 Epochs: 150\
 Images: preprocessed with `extract_patches`
 
-| Metric | Mean | Minimum | Maximum | Standard deviation |
-| --- | --- | --- | --- | --- |
-│ SSIM   │ 0.1549  │ -0.0336 │ 0.8826  │ 0.1278 │
-│ PSNR   │ 14.1051 │ 7.8994  │ 32.6551 │ 2.8017 │
-│ L1     │ 0.3123  │ 0.0345  │ 0.7272  │ 0.0766 │
-│ HP-L1  │ 0.0932  │ 0.0138  │ 0.1580  │ 0.0266 │
+| Metric | Mean    | Minimum | Maximum | Standard deviation |
+| ---    | ---     | ---     | ---     | ---                |
+| SSIM   | 0.1549  | -0.0336 | 0.8826  | 0.1278             |
+| PSNR   | 14.1051 | 7.8994  | 32.6551 | 2.8017             |
+| L1     | 0.3123  | 0.0345  | 0.7272  | 0.0766             |
+| HP-L1  | 0.0932  | 0.0138  | 0.1580  | 0.0266             |
 
 **Sample generated images:**
 
-**TODO:** Add images
+![Sample 1 - Training 3](./figures/training_3/t3_0.png)
+
+![Sample 2 - Training 3](./figures/training_3/t3_1.png)
+
+<details>
+  <summary>Show more</summary>
+
+![Sample 3 - Training 3](./figures/training_3/t3_2.png)
+
+![Sample 4 - Training 3](./figures/training_3/t3_3.png)
+
+![Sample 5 - Training 3](./figures/training_3/t3_4.png)
+
+![Sample 6 - Training 3](./figures/training_3/t3_5.png)
+
+![Sample 7 - Training 3](./figures/training_3/t3_6.png)
+
+![Sample 8 - Training 3](./figures/training_3/t3_7.png)
+
+</details>
 
 ## References
 
