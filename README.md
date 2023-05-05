@@ -181,7 +181,11 @@ In the next training, we set the PatchGAN model's patch size to 70. We trained t
 
 ## Evaluation
 
-The model was evaluated on the validation set of 1098 images. Apart from visually inspecting generated images, we also used a custom function to calculate the Structural Similarity Index (SSIM), Peak Signal-to-Noise ratio (PSNR), and the L1 distance (Mean Absolute Error) between the generated images and the ground truth images. In addition to that, we also calculated the L1 distance between highpass filtered generated images and highpass filtered ground truth images to see how well edges are preserved. We named this metric HP-L1. The highpass filter was implemented using a 3x3 Laplacian kernel which is defined as a constant `tf.Tensor` and is applied convolutionally to the images using the `tf.nn.conv2d` function with a stride of 1 and same padding. The kernel is defined as follows:
+The model was evaluated on the validation set of 1098 images. Apart from visually inspecting generated images, we also used a custom function to calculate the Structural Similarity Index (SSIM), Peak Signal-to-Noise ratio (PSNR), and the L1 distance (Mean Absolute Error) between the generated images and the ground truth images. In addition to that, we also calculated the L1 distance between highpass filtered generated images and highpass filtered ground truth images to see how well edges are preserved. We named this metric HP-L1.
+
+PSNR ranges from 0 to infinity and higher values indicate better reconstruction quality. SSIM ranges from -1 to 1, however, it is usually between 0 and 1. SSIM of 1 means that the images are identical and SSIM of 0 means no correlation between the images.
+
+The highpass filter for HP-L1 was implemented using a 3x3 Laplacian kernel which is defined as a constant `tf.Tensor` and is applied convolutionally to the images using the `tf.nn.conv2d` function with a stride of 1 and same padding. The kernel is defined as follows:
 
 ```py
 tf.constant(
@@ -198,11 +202,11 @@ The evaluation function is defined in the [`pix2pix.py`](./src/pix2pix.py) scrip
 
 Upon visual inspection we found that the model trained with the batch size set to 10 produced images there were washed out and contained crooked structures. Using a batch size of 4 wasn't optimal either. This is caused by the fact that batch normalization aggregated statistics over 10 images. Using a batch size of 1 is an approach to batch normalization called instance normalization which yields better results.
 
-Using PatchGAN receptive field sizes smaller than 70x70 led to artifacts in the generated images. The largest receptive field size of 286x286 led to the best results. The model trained with `extract_patches` produced better results than the model trained with resized images since there wasn't as much loss of detail. The model trained with the largest receptive field size of 286x286 and `extract_patches` produced the best results overall.
+Using PatchGAN with a receptive field of 16x16 led to artifacts in the generated images, therefore we do not include it in the final evaluattion. The larger receptive field sizes of 70x70 and 286x286 led to the best results. The models trained with `extract_patches` produced better results than the model trained using only resized images.
 
-We used the models from [training 7](#training-7), [training 8](#training-8), and [training 9](#training-9) with the batch size set to 1 and corresponding PatchGAN receptive field sizes of 70, 286, and 70 respectively. We also include results from [training 2](#training-2) and [training 3](#training-3) with the batch size set to 4 and 10 respectively and discriminator receptive field size of 94 which was caused by the mistake in the implementation of the PatchGAN model.
+We chose to evaluate the models from [training 7](#training-7), [training 8](#training-8), and [training 9](#training-9) with the batch size set to 1 and corresponding PatchGAN receptive field sizes of 70, 286, and 70 respectively. We also include results from [training 2](#training-2) and [training 3](#training-3) with the batch size set to 4 and 10 respectively and discriminator receptive field size of 94 which was caused by the mistake in the implementation of the PatchGAN model.
 
-The results are shown in the following table. We also include generated image samples from each model.
+The resulting numbers show that quality perceived by the human eye is not always reflected in the metrics. The metrics are shown in a table for each model. We also include generated image samples from each model.
 
 ### Model from training 7
 
@@ -398,3 +402,5 @@ Images: preprocessed with `extract_patches`
 - [TensorFlow pix2pix tutorial](https://www.tensorflow.org/tutorials/generative/pix2pix), The TensorFlow Authors, 2019
 
 - [pix2pix Torch implementation](https://github.com/phillipi/pix2pix), Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, Alexei A. Efros, 2017
+
+- [Is there a relationship between peak-signal-to-noise ratio and structural similarity index measure?](https://doi.org/10.1049/iet-ipr.2012.0489), Alain Horé, Djemel Ziou, 2013
