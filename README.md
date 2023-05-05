@@ -13,7 +13,7 @@ The dataset used for this project is the paired [pix2pix Maps](http://efrosgans.
 
 The functions used to preprocess the dataset are in the [`src`](./src) directory of this repository in the [`pixutils.py`](./src/pixutils.py) script. The functions are `load_image`, `extract_patches`, `random_jitter`, `rescale_images`, and `resize_images`.
 
-The map to satellite pairs are in one jpeg file, side-by-side. The size of the images is 600x1200. For this reason, the images need to be split into two separate images. We defined a custom `tf.data.Dataset` pipeline to load the images and split them into two separate 600x600 images. This step is done right after loading the image file in a function called `load_image` which is passed to the `map` function of the dataset pipeline.
+The map to satellite pairs are in one jpeg file, side-by-side. The size of the images is 600x1200. For this reason, the images need to be split into two separate images. We defined a custom [`tf.data.Dataset`](https://www.tensorflow.org/api_docs/python/tf/data/Dataset) pipeline to load the images and split them into two separate 600x600 images. This step is done right after loading the image file in a function called `load_image` which is passed to the `map` function of the dataset pipeline.
 
 The 600x600 are relatively large images, so we incorporated a step to the pipeline to extract 256x256 patches from the images. This step is done in the `extract_patches` function which is also passed to the `map` function of the dataset pipeline. This outputs a dataset of 1096 and 1098 batches of four 256x256 patches for the training and validation sets respectively. For this reason we use the `unbatch` method to get a dataset of 4384 and 4392 patches for the training and validation sets respectively. This way we are not limited to a batch size of 4 which was output by the `extract_patches` function.
 
@@ -197,7 +197,7 @@ The model was evaluated on the validation set of 1098 images. Apart from visuall
 
 PSNR ranges from 0 to infinity and higher values indicate better reconstruction quality. SSIM ranges from -1 to 1, however, it is usually between 0 and 1. SSIM of 1 means that the images are identical and SSIM of 0 means no correlation between the images.
 
-The highpass filter for HP-L1 was implemented using a 3x3 Laplacian kernel which is defined as a constant `tf.Tensor` and is applied convolutionally to the images using the `tf.nn.conv2d` function with a stride of 1 and same padding. The kernel is defined as follows:
+The highpass filter for HP-L1 was implemented using a 3x3 Laplacian kernel which is defined as a constant [`tf.Tensor`](https://www.tensorflow.org/api_docs/python/tf/Tensor) and is applied convolutionally to the images using the [`tf.nn.conv2d`](https://www.tensorflow.org/api_docs/python/tf/nn/conv2d) function with a stride of 1 and same padding. The kernel is defined as follows:
 
 ```py
 tf.constant(
