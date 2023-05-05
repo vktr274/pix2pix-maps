@@ -45,7 +45,7 @@ Examples of map and satellite extracted patch pairs from the preprocessed traini
 
 ## Model
 
-The model used for this project is the pix2pix model introduced in the [Image-to-Image Translation with Conditional Adversarial Networks](https://arxiv.org/abs/1611.07004) paper. The model consists of a generator and a discriminator. The generator is a U-Net based architecture that is fully convolutional and doesn't use any pooling layers like the original U-Net architecture ([U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597), Olaf Ronneberger, Philipp Fischer, and Thomas Brox, 2015). Instead, it uses strided convolutions for downsampling and strided transposed convolutions for upsampling. Both downsampling and upsampling are done by a factor of 2, therefore strides are set to 2. Upsampling blocks output ReLU activations while downsampling blocks output LeakyReLU activations with the slope coefficient set to 0.2. Kernel size is set to 4 for all convolutional layers. The last layer of the generator outputs tanh activations in a range of [-1, 1] to match the range of the input images. The activation map has a depth of 3 and spatial resolution to match the input images.
+The model used for this project is the pix2pix model introduced in the [Image-to-Image Translation with Conditional Adversarial Networks](https://arxiv.org/abs/1611.07004) paper. The model consists of a generator and a discriminator. The generator is a U-Net based architecture that is fully convolutional and doesn't use any pooling layers unlike the original U-Net architecture ([U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597), Olaf Ronneberger, Philipp Fischer, and Thomas Brox, 2015). Instead, it uses strided convolutions for downsampling and strided transposed convolutions for upsampling. Both downsampling and upsampling are done by a factor of 2, therefore strides are set to 2. Upsampling blocks output ReLU activations while downsampling blocks output LeakyReLU activations with the slope coefficient set to 0.2. Kernel size is set to 4 for all convolutional layers. The last layer of the generator outputs tanh activations in a range of [-1, 1] to match the range of the input images. The activation map has a depth of 3 and spatial resolution to match the input images.
 
 The generator only works on 256x256 images since it is fully convolutional and has skip connections that use concatenation to combine outputs of each block in the contracting path with corresponding inputs in the expansive path. To make the generator work on smaller or larger images, the generator architecture needs to be modified to have lesser or more blocks in the contracting and expansive paths since larger images need to be downsampled more and smaller images need to be downsampled less to reach 1x1 spatial resolution.
 
@@ -131,7 +131,7 @@ The report from Weights & Biases for each training containing logged metrics and
 
 **Note:**
 
-Please note that in the first 6 trainings there was a mistake in our implementation of the PatchGAN model which affected the receptive field sizes. This means that the receptive field sizes mentioned in the following sections are incorrect. The receptive size was 22, 94, and 382 instead of 16, 70, and 286 respectively. The mistake was fixed before the 7th training.
+Please note that in the first 6 trainings there was a mistake in our implementation of the PatchGAN model which affected the receptive field sizes. This means that the receptive field sizes mentioned in the following 6 sections are incorrect. The receptive sizes were 22, 94, and 382 instead of 16, 70, and 286 respectively. The mistake was fixed before the 7th training.
 
 ### Training 1
 
@@ -181,7 +181,7 @@ The notebook for this training can be found in [`src/pix2pix-b1-rf70-e400-resize
 
 ### Training 8
 
-Since the previous trainings confirmed that using `extract_patches` leads to better results, we continued using it in the next training. To confirm that the larger receptive field size has a positive impact on the generated images after fixing the receptive field size issue, we trained the model for 200 epochs with batch size set to 1. We set the PatchGAN model's patch size to 286. The generated images during training looked more detailed than the images that were only resized and the largest patch size led to the best results so far. The training lasted 16 hours and 55 minutes.
+Since the previous trainings confirmed that using `extract_patches` leads to better results, we continued using it in the next training. To confirm that the larger receptive field size has a positive impact on the generated images after fixing the receptive field size issue, we trained the model for 200 epochs with batch size set to 1 and the PatchGAN model's patch size to 286. The generated images during training looked more detailed than the images that were only resized and the largest patch size led to the best results so far. The training lasted 16 hours and 55 minutes.
 
 The notebook for this training can be found in [`src/pix2pix-b1-rf286-e200-patches.ipynb`](./src/pix2pix-b1-rf286-e200-patches.ipynb).
 
@@ -195,7 +195,7 @@ The notebook for this training can be found in [`src/pix2pix-b1-rf70-e200-patche
 
 The model was evaluated on the validation set of 1098 images. Apart from visually inspecting generated images, we also used a custom function to calculate the Structural Similarity Index (SSIM), Peak Signal-to-Noise ratio (PSNR), and the L1 distance (Mean Absolute Error) between the generated images and the ground truth images. In addition to that, we also calculated the L1 distance between highpass filtered generated images and highpass filtered ground truth images to see how well edges are preserved. We named this metric HP-L1.
 
-PSNR ranges from 0 to infinity and higher values indicate better reconstruction quality. SSIM ranges from -1 to 1, however, it is usually between 0 and 1. SSIM of 1 means that the images are identical and SSIM of 0 means no correlation between the images.
+PSNR ranges from 0 to infinity and higher values indicate better reconstruction quality. SSIM ranges from -1 to 1, however, it is usually between 0 and 1. SSIM of 1 means that the images are identical and SSIM of 0 means that there is no correlation between the images.
 
 The highpass filter for HP-L1 was implemented using a 3x3 Laplacian kernel which is defined as a constant [`tf.Tensor`](https://www.tensorflow.org/api_docs/python/tf/Tensor) and is applied convolutionally to the images using the [`tf.nn.conv2d`](https://www.tensorflow.org/api_docs/python/tf/nn/conv2d) function with a stride of 1 and same padding. The kernel is defined as follows:
 
@@ -214,11 +214,11 @@ The evaluation function is defined in the [`pix2pix.py`](./src/pix2pix.py) scrip
 
 Upon visual inspection we found that the model trained with the batch size set to 10 produced lower quality images. Using a batch size of 4 wasn't optimal either. This is caused by the fact that batch normalization aggregated statistics over 10 and 4 images for batch sizes of 10 and 4 respectively. Using a batch size of 1 is an approach to batch normalization called instance normalization which yields better results.
 
-Using PatchGAN with a receptive field of 16x16 led to artifacts in the generated images, therefore we do not include it in the final evaluattion. The larger receptive field sizes of 70x70 and 286x286 led to the best results. The models trained with `extract_patches` produced better results than the model trained using only resized images.
+Using PatchGAN with the smallest receptive field size led to artifacts in the generated images, therefore we do not include it in the final evaluattion. The larger receptive field sizes of 70x70 and 286x286 led to the best results. The models trained with `extract_patches` produced better results than the model trained using only resized images.
 
 We chose to evaluate the models from [training 7](#training-7), [training 8](#training-8), and [training 9](#training-9) with the batch size set to 1 and corresponding PatchGAN receptive field sizes of 70, 286, and 70 respectively. We also include results from [training 2](#training-2) and [training 3](#training-3) with the batch size set to 4 and 10 respectively and discriminator receptive field size of 94 which was caused by the mistake in the implementation of the PatchGAN model.
 
-The resulting numbers show that quality perceived by the human eye is not always reflected in the metrics. The metrics are shown in a table for each model. We also include generated image samples from each model.
+The resulting numbers show that quality perceived by the human eye is not always reflected in metrics. The metrics are shown in a table for each model. We also include generated image samples from each model.
 
 The notebook for the evaluation can be found in [`src/pix2pix-eval.ipynb`](./src/pix2pix-eval.ipynb).
 
