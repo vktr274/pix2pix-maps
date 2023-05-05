@@ -7,7 +7,7 @@ The goal of this project is to implement the pix2pix model and train it on the [
 
 ## Dataset
 
-The dataset used for this project is the paired [pix2pix Maps](http://efrosgans.eecs.berkeley.edu/pix2pix/datasets/maps.tar.gz) dataset containing 1096 training images and 1098 validation images. The dataset contains images of maps and their corresponding satellite images extracted from Google Maps. The dataset is also available on Kaggle [here](https://www.kaggle.com/datasets/alincijov/pix2pix-maps). The dataset is split into two directories - `train` and `val`.
+The dataset used for this project is the paired [pix2pix Maps](http://efrosgans.eecs.berkeley.edu/pix2pix/datasets/maps.tar.gz) dataset containing 1096 training images and 1098 validation images. The dataset contains images of maps and their corresponding satellite images extracted from Google Maps. It is also available on Kaggle [here](https://www.kaggle.com/datasets/alincijov/pix2pix-maps). The dataset is split into two directories - `train` and `val`.
 
 ### Dataset Preprocessing
 
