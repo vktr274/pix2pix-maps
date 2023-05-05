@@ -11,7 +11,7 @@ The dataset used for this project is the paired [pix2pix Maps](http://efrosgans.
 
 ### Dataset Preprocessing
 
-The functions used to preprocess the dataset are in the [`src`](./src) directory of this repository in the [`pixutils.py`](./src/pixutils.py) script. The functions are `load_image`, `extract_patches`, `random_jitter`, and `rescale_images`.
+The functions used to preprocess the dataset are in the [`src`](./src) directory of this repository in the [`pixutils.py`](./src/pixutils.py) script. The functions are `load_image`, `extract_patches`, `random_jitter`, `rescale_images`, and `resize_images`.
 
 The map to satellite pairs are in one jpeg file, side-by-side. The size of the images is 600x1200. For this reason, the images need to be split into two separate images. We defined a custom `tf.data.Dataset` pipeline to load the images and split them into two separate 600x600 images. This step is done right after loading the image file in a function called `load_image` which is passed to the `map` function of the dataset pipeline.
 
@@ -25,7 +25,7 @@ After that we normalize the images to the range [-1, 1] by dividing them by 127.
 
 Finally, the training dataset is shuffled and batched with a set batch size. The validation dataset is also batched with the same batch size but not shuffled.
 
-We used the following data pipelines for training and validation in our experiments:
+We used the following pipelines for training and validation data in our experiments:
 
 **Training data pipeline**: `load_image` -> `extract_patches` -> `unbatch` -> `random_jitter` -> `rescale_images` -> `shuffle` -> `batch`
 
@@ -53,7 +53,7 @@ The discriminator is a PatchGAN model, introduced by the authors of the pix2pix 
 
 The PatchGAN model implementation uses the same downsampling blocks as the generator. The last layer uses the same kernel size of 4 but strides are set to 1 as this layer only reduces depth and not spatial resolution. This layer outputs a single value for each patch which is the probability that the patch is real.
 
-We also use batch normalization and dropout in some blocks following the recommendations of the pix2pix paper. The dropout rate is 0.5. As per the paper, we also use Gaussian weight initialization with a mean of 0 and standard deviation of 0.02. The optimizer used for training both the generator and discriminator is Adam with a learning rate of 0.0002 and beta values of 0.5 and 0.999 for the first and second moments respectively.
+We also use batch normalization and dropout in some blocks following the pix2pix paper. The dropout rate is 0.5. As per the paper, we also use Gaussian weight initialization with a mean of 0 and standard deviation of 0.02. The optimizer used for training both the generator and discriminator is Adam with a learning rate of 0.0002 and beta values of 0.5 and 0.999 for the first and second moments respectively.
 
 The models and their training loop are defined in the [`src`](./src) directory of this repository in the [`pix2pix.py`](./src/pix2pix.py) script. The generator and discriminator models are defined in the `UNet` and `PatchGAN` functions respectively. The training loop is defined in the `fit` function. The loss functions are defined in the `g_loss` and `d_loss` functions for the generator and discriminator respectively.
 
@@ -206,10 +206,17 @@ The results are shown in the following table. We also include generated image sa
 
 ### Model from training 7
 
+Batch size: 1\
+PatchGAN receptive field size: 70\
+Epochs: 400\
+Images: resized
+
 | Metric | Mean | Minimum | Maximum | Standard deviation |
 | --- | --- | --- | --- | --- |
-
-**TODO:** Add metrics
+│ SSIM   │ 0.1117  │ 0.0256  │ 0.8711  │ 0.1124 │
+│ PSNR   │ 14.2976 │ 10.7300 │ 27.7124 │ 2.1979 │
+│ L1     │ 0.2992  │ 0.0716  │ 0.4493  │ 0.0630 │
+│ HP-L1  │ 0.1258  │ 0.0308  │ 0.1767  │ 0.0247 │
 
 **Sample generated images:**
 
@@ -217,10 +224,17 @@ The results are shown in the following table. We also include generated image sa
 
 ### Model from training 8
 
+Batch size: 1\
+PatchGAN receptive field size: 286\
+Epochs: 200\
+Images: preprocessed with `extract_patches`
+
 | Metric | Mean | Minimum | Maximum | Standard deviation |
 | --- | --- | --- | --- | --- |
-
-**TODO:** Add metrics
+│ SSIM   │ 0.1656  │ -0.0550 │ 0.9602  │ 0.1356 │
+│ PSNR   │ 14.5018 │ 8.0866  │ 34.5621 │ 2.7823 │
+│ L1     │ 0.2977  │ 0.0290  │ 0.7322  │ 0.0722 │
+│ HP-L1  │ 0.1136  │ 0.0134  │ 0.1728  │ 0.0254 │
 
 **Sample generated images:**
 
@@ -228,10 +242,53 @@ The results are shown in the following table. We also include generated image sa
 
 ### Model from training 9
 
+Batch size: 1\
+PatchGAN receptive field size: 70\
+Epochs: 200\
+Images: preprocessed with `extract_patches`
+
 | Metric | Mean | Minimum | Maximum | Standard deviation |
 | --- | --- | --- | --- | --- |
+│ SSIM   │ 0.1576  │ -0.0621 │ 0.9641  │ 0.1427 │
+│ PSNR   │ 14.1460 │ 8.6875  │ 33.6759 │ 2.9903 │
+│ L1     │ 0.3114  │ 0.0299  │ 0.6231  │ 0.0805 │
+│ HP-L1  │ 0.1108  │ 0.0111  │ 0.1648  │ 0.0261 │
 
-**TODO:** Add metrics
+**Sample generated images:**
+
+**TODO:** Add images
+
+### Model from training 2
+
+Batch size: 4\
+PatchGAN receptive field size: 94 (mistake in implementation)\
+Epochs: 200\
+Images: preprocessed with `extract_patches`
+
+| Metric | Mean | Minimum | Maximum | Standard deviation |
+| --- | --- | --- | --- | --- |
+│ SSIM   │ 0.1592  │ -0.0381 │ 0.9653  │ 0.1364 │
+│ PSNR   │ 14.6817 │ 8.7748  │ 33.6167 │ 2.8260 │
+│ L1     │ 0.2913  │ 0.0332  │ 0.6202  │ 0.0720 │
+│ HP-L1  │ 0.0969  │ 0.0089  │ 0.1416  │ 0.0225 │
+
+**Sample generated images:**
+
+**TODO:** Add images
+
+### Model from training 3
+
+Batch size: 10\
+PatchGAN receptive field size: 94 (mistake in implementation)\
+Epochs: 150\
+Images: preprocessed with `extract_patches`
+
+| Metric | Mean | Minimum | Maximum | Standard deviation |
+| --- | --- | --- | --- | --- |
+│ SSIM   │ 0.1549  │ -0.0336 │ 0.8826  │ 0.1278 │
+│ PSNR   │ 14.1051 │ 7.8994  │ 32.6551 │ 2.8017 │
+│ L1     │ 0.3123  │ 0.0345  │ 0.7272  │ 0.0766 │
+│ HP-L1  │ 0.0932  │ 0.0138  │ 0.1580  │ 0.0266 │
 
 **Sample generated images:**
 
